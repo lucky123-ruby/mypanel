@@ -1,0 +1,60 @@
+﻿  HYFbtclocker.cpp
+C:\Users\胡剑卓\Documents\HYFbtclocker\start.h(271,35): warning C4267: “参数”: 从“size_t”转换到“DWORD”，可能丢失数据
+  (编译源文件“HYFbtclocker.cpp”)
+  
+C:\Users\胡剑卓\Documents\HYFbtclocker\tool.h(136,37): warning C4244: “=”: 从“DWORD”转换到“wchar_t”，可能丢失数据
+  (编译源文件“HYFbtclocker.cpp”)
+  
+C:\Users\胡剑卓\Documents\HYFbtclocker\beadmin.h(296,47): warning C4244: “=”: 从“double”转换到“float”，可能丢失数据
+  (编译源文件“HYFbtclocker.cpp”)
+  
+C:\Users\胡剑卓\Documents\HYFbtclocker\beadmin.h(299,25): warning C4305: “=”: 从“double”到“float”截断
+  (编译源文件“HYFbtclocker.cpp”)
+  
+C:\Users\胡剑卓\Documents\HYFbtclocker\beadmin.h(302,53): warning C4244: “=”: 从“double”转换到“float”，可能丢失数据
+  (编译源文件“HYFbtclocker.cpp”)
+  
+C:\Users\胡剑卓\Documents\HYFbtclocker\beadmin.h(305,46): warning C4244: “=”: 从“double”转换到“float”，可能丢失数据
+  (编译源文件“HYFbtclocker.cpp”)
+  
+C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.42.34433\include\algorithm(4391,25): warning C4244: “=”: 从“unsigned short”转换到“char”，可能丢失数据
+  (编译源文件“HYFbtclocker.cpp”)
+      C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.42.34433\include\algorithm(4391,25):
+      模板实例化上下文(最早的实例化上下文)为
+          C:\Users\胡剑卓\Documents\HYFbtclocker\crypt.h(342,18):
+          查看对正在编译的函数 模板 实例化“void std::generate<std::_Vector_iterator<std::_Vector_val<std::_Simple_types<_Elem>>>,std::independent_bits_engine<std::mt19937,8,unsigned short>>(_FwdIt,_FwdIt,_Fn)”的引用
+          with
+          [
+              _Elem=char,
+              _FwdIt=std::_Vector_iterator<std::_Vector_val<std::_Simple_types<char>>>,
+              _Fn=std::independent_bits_engine<std::mt19937,8,unsigned short>
+          ]
+  
+C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.42.34433\include\utility(263,54): warning C4244: “初始化”: 从“_Ty”转换到“_Ty2”，可能丢失数据
+C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.42.34433\include\utility(263,54): warning C4244:         with
+C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.42.34433\include\utility(263,54): warning C4244:         [
+C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.42.34433\include\utility(263,54): warning C4244:             _Ty=double
+C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.42.34433\include\utility(263,54): warning C4244:         ]
+C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.42.34433\include\utility(263,54): warning C4244:         and
+C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.42.34433\include\utility(263,54): warning C4244:         [
+C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.42.34433\include\utility(263,54): warning C4244:             _Ty2=float
+C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.42.34433\include\utility(263,54): warning C4244:         ]
+  (编译源文件“HYFbtclocker.cpp”)
+      C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.42.34433\include\utility(263,54):
+      模板实例化上下文(最早的实例化上下文)为
+          C:\Users\胡剑卓\Documents\HYFbtclocker\beadmin.h(330,31):
+          查看对正在编译的函数 模板 实例化“std::pair<const UacMethod,float>::pair<UacMethod,double,0>(_Other1 &&,_Other2 &&) noexcept”的引用
+          with
+          [
+              _Other1=UacMethod,
+              _Other2=double
+          ]
+              C:\Users\胡剑卓\Documents\HYFbtclocker\beadmin.h(330,27):
+              请参阅 "UacmeBypass::ChooseBestMethod" 中对 "std::pair<const UacMethod,float>::pair" 的第一个引用
+  
+  正在生成代码
+  17 of 3528 functions ( 0.5%) were compiled, the rest were copied from previous compilation.
+    15 functions were new in current compilation
+    1 functions had inline decision re-evaluated but remain unchanged
+  已完成代码的生成
+  HYFbtclocker.vcxproj -> C:\Users\胡剑卓\Documents\HYFbtclocker\x64\Release\HYFbtclocker.exe
