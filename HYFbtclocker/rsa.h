@@ -3,6 +3,7 @@
 #include <bcrypt.h>
 #include <iostream>
 #include <fstream>
+#include<wincrypt.h>
 #include <vector>
 #include <ShlObj.h>
 #include <filesystem>

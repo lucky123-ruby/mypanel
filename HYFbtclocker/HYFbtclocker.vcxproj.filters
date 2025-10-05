@@ -44,10 +44,10 @@
     <ClInclude Include="uacnew.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="cheat.h">
+    <ClInclude Include="networkscan.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="antihook.h">
+    <ClInclude Include="deletfile.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

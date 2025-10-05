@@ -1,0 +1,480 @@
+﻿  HYFbtclocker.cpp
+C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.42.34433\include\filesystem(12): warning STL4038: The contents of <filesystem> are available only with C++17 or later.
+C:\Users\胡剑卓\Desktop\mypanel-master\HYFbtclocker\rsa.h(16,21): error C2039: "filesystem": 不是 "std" 的成员
+  (编译源文件“HYFbtclocker.cpp”)
+      C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.42.34433\include\iomanip(22,1):
+      参见“std”的声明
+  
+C:\Users\胡剑卓\Desktop\mypanel-master\HYFbtclocker\rsa.h(16,21): error C2878: “filesystem”: 该名称的命名空间或类不存在
+  (编译源文件“HYFbtclocker.cpp”)
+  
+C:\Users\胡剑卓\Desktop\mypanel-master\HYFbtclocker\rsa.h(36,1): error C2653: “fs”: 不是类或命名空间名称
+  (编译源文件“HYFbtclocker.cpp”)
+  
+C:\Users\胡剑卓\Desktop\mypanel-master\HYFbtclocker\rsa.h(36,5): error C4430: 缺少类型说明符 - 假定为 int。注意: C++ 不支持默认 int
+  (编译源文件“HYFbtclocker.cpp”)
+  
+C:\Users\胡剑卓\Desktop\mypanel-master\HYFbtclocker\rsa.h(36,10): error C2146: 语法错误: 缺少“;”(在标识符“GetDocumentsPath”的前面)
+  (编译源文件“HYFbtclocker.cpp”)
+  
+C:\Users\胡剑卓\Desktop\mypanel-master\HYFbtclocker\rsa.h(36,29): error C2143: 语法错误: 缺少“;”(在“{”的前面)
+  (编译源文件“HYFbtclocker.cpp”)
+  
+C:\Users\胡剑卓\Desktop\mypanel-master\HYFbtclocker\rsa.h(36,29): error C2447: “{”: 缺少函数标题(是否是老式的形式表?)
+  (编译源文件“HYFbtclocker.cpp”)
+  
+C:\Users\胡剑卓\Desktop\mypanel-master\HYFbtclocker\rsa.h(245,29): error C2653: “fs”: 不是类或命名空间名称
+  (编译源文件“HYFbtclocker.cpp”)
+  
+C:\Users\胡剑卓\Desktop\mypanel-master\HYFbtclocker\rsa.h(245,23): error C4430: 缺少类型说明符 - 假定为 int。注意: C++ 不支持默认 int
+  (编译源文件“HYFbtclocker.cpp”)
+  
+C:\Users\胡剑卓\Desktop\mypanel-master\HYFbtclocker\rsa.h(245,37): error C2143: 语法错误: 缺少“,”(在“&”的前面)
+  (编译源文件“HYFbtclocker.cpp”)
+  
+C:\Users\胡剑卓\Desktop\mypanel-master\HYFbtclocker\rsa.h(248,14): error C2653: “fs”: 不是类或命名空间名称
+  (编译源文件“HYFbtclocker.cpp”)
+  
+C:\Users\胡剑卓\Desktop\mypanel-master\HYFbtclocker\rsa.h(248,25): error C2065: “filePath”: 未声明的标识符
+  (编译源文件“HYFbtclocker.cpp”)
+  
+C:\Users\胡剑卓\Desktop\mypanel-master\HYFbtclocker\rsa.h(248,18): error C3861: “exists”: 找不到标识符
+  (编译源文件“HYFbtclocker.cpp”)
+  
+C:\Users\胡剑卓\Desktop\mypanel-master\HYFbtclocker\rsa.h(249,48): error C2065: “filePath”: 未声明的标识符
+  (编译源文件“HYFbtclocker.cpp”)
+  
+C:\Users\胡剑卓\Desktop\mypanel-master\HYFbtclocker\rsa.h(254,30): error C2653: “fs”: 不是类或命名空间名称
+  (编译源文件“HYFbtclocker.cpp”)
+  
+C:\Users\胡剑卓\Desktop\mypanel-master\HYFbtclocker\rsa.h(254,44): error C2065: “filePath”: 未声明的标识符
+  (编译源文件“HYFbtclocker.cpp”)
+  
+C:\Users\胡剑卓\Desktop\mypanel-master\HYFbtclocker\rsa.h(254,34): error C3861: “file_size”: 找不到标识符
+  (编译源文件“HYFbtclocker.cpp”)
+  
+C:\Users\胡剑卓\Desktop\mypanel-master\HYFbtclocker\rsa.h(257,27): error C2065: “filePath”: 未声明的标识符
+  (编译源文件“HYFbtclocker.cpp”)
+  
+C:\Users\胡剑卓\Desktop\mypanel-master\HYFbtclocker\rsa.h(259,73): error C2065: “filePath”: 未声明的标识符
+  (编译源文件“HYFbtclocker.cpp”)
+  
+C:\Users\胡剑卓\Desktop\mypanel-master\HYFbtclocker\rsa.h(264,29): error C2065: “overwritePasses”: 未声明的标识符
+  (编译源文件“HYFbtclocker.cpp”)
+  
+C:\Users\胡剑卓\Desktop\mypanel-master\HYFbtclocker\rsa.h(283,14): error C2653: “fs”: 不是类或命名空间名称
+  (编译源文件“HYFbtclocker.cpp”)
+  
+C:\Users\胡剑卓\Desktop\mypanel-master\HYFbtclocker\rsa.h(283,25): error C2065: “filePath”: 未声明的标识符
+  (编译源文件“HYFbtclocker.cpp”)
+  
+C:\Users\胡剑卓\Desktop\mypanel-master\HYFbtclocker\rsa.h(284,55): error C2065: “filePath”: 未声明的标识符
+  (编译源文件“HYFbtclocker.cpp”)
+  
+C:\Users\胡剑卓\Desktop\mypanel-master\HYFbtclocker\rsa.h(298,5): error C2653: “fs”: 不是类或命名空间名称
+  (编译源文件“HYFbtclocker.cpp”)
+  
+C:\Users\胡剑卓\Desktop\mypanel-master\HYFbtclocker\rsa.h(298,14): error C2146: 语法错误: 缺少“;”(在标识符“inputFile”的前面)
+  (编译源文件“HYFbtclocker.cpp”)
+  
+C:\Users\胡剑卓\Desktop\mypanel-master\HYFbtclocker\rsa.h(298,14): error C2065: “inputFile”: 未声明的标识符
+  (编译源文件“HYFbtclocker.cpp”)
+  
+C:\Users\胡剑卓\Desktop\mypanel-master\HYFbtclocker\rsa.h(303,9): error C2653: “fs”: 不是类或命名空间名称
+  (编译源文件“HYFbtclocker.cpp”)
+  
+C:\Users\胡剑卓\Desktop\mypanel-master\HYFbtclocker\rsa.h(303,18): error C2146: 语法错误: 缺少“;”(在标识符“documentsPath”的前面)
+  (编译源文件“HYFbtclocker.cpp”)
+  
+C:\Users\胡剑卓\Desktop\mypanel-master\HYFbtclocker\rsa.h(303,18): error C2065: “documentsPath”: 未声明的标识符
+  (编译源文件“HYFbtclocker.cpp”)
+  
+C:\Users\胡剑卓\Desktop\mypanel-master\HYFbtclocker\rsa.h(303,34): error C3861: “GetDocumentsPath”: 找不到标识符
+  (编译源文件“HYFbtclocker.cpp”)
+  
+C:\Users\胡剑卓\Desktop\mypanel-master\HYFbtclocker\rsa.h(304,9): error C2065: “inputFile”: 未声明的标识符
+  (编译源文件“HYFbtclocker.cpp”)
+  
+C:\Users\胡剑卓\Desktop\mypanel-master\HYFbtclocker\rsa.h(304,21): error C2065: “documentsPath”: 未声明的标识符
+  (编译源文件“HYFbtclocker.cpp”)
+  
+C:\Users\胡剑卓\Desktop\mypanel-master\HYFbtclocker\rsa.h(307,14): error C2653: “fs”: 不是类或命名空间名称
+  (编译源文件“HYFbtclocker.cpp”)
+  
+C:\Users\胡剑卓\Desktop\mypanel-master\HYFbtclocker\rsa.h(307,25): error C2065: “inputFile”: 未声明的标识符
+  (编译源文件“HYFbtclocker.cpp”)
+  
+C:\Users\胡剑卓\Desktop\mypanel-master\HYFbtclocker\rsa.h(307,18): error C3861: “exists”: 找不到标识符
+  (编译源文件“HYFbtclocker.cpp”)
+  
+C:\Users\胡剑卓\Desktop\mypanel-master\HYFbtclocker\rsa.h(308,65): error C2065: “inputFile”: 未声明的标识符
+  (编译源文件“HYFbtclocker.cpp”)
+  
+C:\Users\胡剑卓\Desktop\mypanel-master\HYFbtclocker\rsa.h(308,37): error C2512: “std::runtime_error”: 没有合适的默认构造函数可用
+  (编译源文件“HYFbtclocker.cpp”)
+      C:\Users\胡剑卓\Desktop\mypanel-master\HYFbtclocker\rsa.h(308,37):
+      “std::runtime_error::runtime_error”: 没有合适的默认构造函数可用
+          C:\Users\胡剑卓\Desktop\mypanel-master\HYFbtclocker\rsa.h(308,37):
+          尝试匹配参数列表“()”时
+  
+C:\Users\胡剑卓\Desktop\mypanel-master\HYFbtclocker\rsa.h(312,30): error C2065: “inputFile”: 未声明的标识符
+  (编译源文件“HYFbtclocker.cpp”)
+  
+C:\Users\胡剑卓\Desktop\mypanel-master\HYFbtclocker\rsa.h(314,70): error C2065: “inputFile”: 未声明的标识符
+  (编译源文件“HYFbtclocker.cpp”)
+  
+C:\Users\胡剑卓\Desktop\mypanel-master\HYFbtclocker\rsa.h(314,37): error C2512: “std::runtime_error”: 没有合适的默认构造函数可用
+  (编译源文件“HYFbtclocker.cpp”)
+      C:\Users\胡剑卓\Desktop\mypanel-master\HYFbtclocker\rsa.h(314,37):
+      “std::runtime_error::runtime_error”: 没有合适的默认构造函数可用
+          C:\Users\胡剑卓\Desktop\mypanel-master\HYFbtclocker\rsa.h(314,37):
+          尝试匹配参数列表“()”时
+  
+C:\Users\胡剑卓\Desktop\mypanel-master\HYFbtclocker\rsa.h(355,9): error C2653: “fs”: 不是类或命名空间名称
+  (编译源文件“HYFbtclocker.cpp”)
+  
+C:\Users\胡剑卓\Desktop\mypanel-master\HYFbtclocker\rsa.h(355,18): error C2146: 语法错误: 缺少“;”(在标识符“encryptedFile”的前面)
+  (编译源文件“HYFbtclocker.cpp”)
+  
+C:\Users\胡剑卓\Desktop\mypanel-master\HYFbtclocker\rsa.h(355,18): error C2065: “encryptedFile”: 未声明的标识符
+  (编译源文件“HYFbtclocker.cpp”)
+  
+C:\Users\胡剑卓\Desktop\mypanel-master\HYFbtclocker\rsa.h(355,34): error C2065: “documentsPath”: 未声明的标识符
+  (编译源文件“HYFbtclocker.cpp”)
+  
+C:\Users\胡剑卓\Desktop\mypanel-master\HYFbtclocker\rsa.h(356,31): error C2065: “encryptedFile”: 未声明的标识符
+  (编译源文件“HYFbtclocker.cpp”)
+  
+C:\Users\胡剑卓\Desktop\mypanel-master\HYFbtclocker\rsa.h(358,73): error C2065: “encryptedFile”: 未声明的标识符
+  (编译源文件“HYFbtclocker.cpp”)
+  
+C:\Users\胡剑卓\Desktop\mypanel-master\HYFbtclocker\rsa.h(358,37): error C2512: “std::runtime_error”: 没有合适的默认构造函数可用
+  (编译源文件“HYFbtclocker.cpp”)
+      C:\Users\胡剑卓\Desktop\mypanel-master\HYFbtclocker\rsa.h(358,37):
+      “std::runtime_error::runtime_error”: 没有合适的默认构造函数可用
+          C:\Users\胡剑卓\Desktop\mypanel-master\HYFbtclocker\rsa.h(358,37):
+          尝试匹配参数列表“()”时
+  
+C:\Users\胡剑卓\Desktop\mypanel-master\HYFbtclocker\rsa.h(367,57): error C2065: “encryptedFile”: 未声明的标识符
+  (编译源文件“HYFbtclocker.cpp”)
+  
+C:\Users\胡剑卓\Desktop\mypanel-master\HYFbtclocker\rsa.h(372,61): error C2065: “inputFile”: 未声明的标识符
+  (编译源文件“HYFbtclocker.cpp”)
+  
+C:\Users\胡剑卓\Desktop\mypanel-master\HYFbtclocker\rsa.h(373,30): error C2065: “inputFile”: 未声明的标识符
+  (编译源文件“HYFbtclocker.cpp”)
+  
+C:\Users\胡剑卓\Desktop\mypanel-master\HYFbtclocker\rsa.h(379,17): error C2653: “fs”: 不是类或命名空间名称
+  (编译源文件“HYFbtclocker.cpp”)
+  
+C:\Users\胡剑卓\Desktop\mypanel-master\HYFbtclocker\rsa.h(379,28): error C2065: “inputFile”: 未声明的标识符
+  (编译源文件“HYFbtclocker.cpp”)
+  
+C:\Users\胡剑卓\Desktop\mypanel-master\HYFbtclocker\rsa.h(391,29): error C2653: “fs”: 不是类或命名空间名称
+  (编译源文件“HYFbtclocker.cpp”)
+  
+C:\Users\胡剑卓\Desktop\mypanel-master\HYFbtclocker\rsa.h(391,40): error C2065: “inputFile”: 未声明的标识符
+  (编译源文件“HYFbtclocker.cpp”)
+  
+C:\Users\胡剑卓\Desktop\mypanel-master\HYFbtclocker\rsa.h(391,33): error C3861: “exists”: 找不到标识符
+  (编译源文件“HYFbtclocker.cpp”)
+  
+C:\Users\胡剑卓\Desktop\mypanel-master\HYFbtclocker\rsa.h(393,17): error C2653: “fs”: 不是类或命名空间名称
+  (编译源文件“HYFbtclocker.cpp”)
+  
+C:\Users\胡剑卓\Desktop\mypanel-master\HYFbtclocker\rsa.h(393,28): error C2065: “inputFile”: 未声明的标识符
+  (编译源文件“HYFbtclocker.cpp”)
+  
+C:\Users\胡剑卓\Desktop\mypanel-master\HYFbtclocker\crypt.h(29,25): error C2653: “fs”: 不是类或命名空间名称
+  (编译源文件“HYFbtclocker.cpp”)
+  
+C:\Users\胡剑卓\Desktop\mypanel-master\HYFbtclocker\crypt.h(29,19): error C4430: 缺少类型说明符 - 假定为 int。注意: C++ 不支持默认 int
+  (编译源文件“HYFbtclocker.cpp”)
+  
+C:\Users\胡剑卓\Desktop\mypanel-master\HYFbtclocker\crypt.h(29,33): error C2143: 语法错误: 缺少“,”(在“&”的前面)
+  (编译源文件“HYFbtclocker.cpp”)
+  
+C:\Users\胡剑卓\Desktop\mypanel-master\HYFbtclocker\crypt.h(33,27): error C2653: “fs”: 不是类或命名空间名称
+  (编译源文件“HYFbtclocker.cpp”)
+  
+C:\Users\胡剑卓\Desktop\mypanel-master\HYFbtclocker\crypt.h(33,21): error C4430: 缺少类型说明符 - 假定为 int。注意: C++ 不支持默认 int
+  (编译源文件“HYFbtclocker.cpp”)
+  
+C:\Users\胡剑卓\Desktop\mypanel-master\HYFbtclocker\crypt.h(33,35): error C2143: 语法错误: 缺少“,”(在“&”的前面)
+  (编译源文件“HYFbtclocker.cpp”)
+  
+C:\Users\胡剑卓\Desktop\mypanel-master\HYFbtclocker\crypt.h(41,21): error C2039: "filesystem": 不是 "std" 的成员
+  (编译源文件“HYFbtclocker.cpp”)
+      C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.42.34433\include\iomanip(22,1):
+      参见“std”的声明
+  
+C:\Users\胡剑卓\Desktop\mypanel-master\HYFbtclocker\crypt.h(41,21): error C2878: “filesystem”: 该名称的命名空间或类不存在
+  (编译源文件“HYFbtclocker.cpp”)
+  
+C:\Users\胡剑卓\Desktop\mypanel-master\HYFbtclocker\crypt.h(169,42): error C2065: “fs”: 未声明的标识符
+  (编译源文件“HYFbtclocker.cpp”)
+  
+C:\Users\胡剑卓\Desktop\mypanel-master\HYFbtclocker\crypt.h(169,42): error C2653: “fs”: 不是类或命名空间名称
+  (编译源文件“HYFbtclocker.cpp”)
+  
+C:\Users\胡剑卓\Desktop\mypanel-master\HYFbtclocker\crypt.h(169,35): error C2923: "std::vector": "path" 不是参数 "_Ty" 的有效 模板 类型参数
+  (编译源文件“HYFbtclocker.cpp”)
+      C:\Users\胡剑卓\Desktop\mypanel-master\HYFbtclocker\rsa.h(36,5):
+      参见“path”的声明
+  
+C:\Users\胡剑卓\Desktop\mypanel-master\HYFbtclocker\crypt.h(169,35): error C2976: “std::vector'”: 模板 参数太少
+  (编译源文件“HYFbtclocker.cpp”)
+      C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.42.34433\include\vector(429,7):
+      参见“std::vector”的声明
+  
+C:\Users\胡剑卓\Desktop\mypanel-master\HYFbtclocker\crypt.h(260,25): error C2653: “fs”: 不是类或命名空间名称
+  (编译源文件“HYFbtclocker.cpp”)
+  
+C:\Users\胡剑卓\Desktop\mypanel-master\HYFbtclocker\crypt.h(260,29): error C2061: 语法错误: 标识符“path”
+  (编译源文件“HYFbtclocker.cpp”)
+  
+C:\Users\胡剑卓\Desktop\mypanel-master\HYFbtclocker\crypt.h(267,28): error C2653: “fs”: 不是类或命名空间名称
+  (编译源文件“HYFbtclocker.cpp”)
+  
+C:\Users\胡剑卓\Desktop\mypanel-master\HYFbtclocker\crypt.h(267,22): error C4430: 缺少类型说明符 - 假定为 int。注意: C++ 不支持默认 int
+  (编译源文件“HYFbtclocker.cpp”)
+  
+C:\Users\胡剑卓\Desktop\mypanel-master\HYFbtclocker\crypt.h(267,36): error C2143: 语法错误: 缺少“,”(在“&”的前面)
+  (编译源文件“HYFbtclocker.cpp”)
+  
+C:\Users\胡剑卓\Desktop\mypanel-master\HYFbtclocker\crypt.h(294,16): error C2065: “fs”: 未声明的标识符
+  (编译源文件“HYFbtclocker.cpp”)
+  
+C:\Users\胡剑卓\Desktop\mypanel-master\HYFbtclocker\crypt.h(294,16): error C2653: “fs”: 不是类或命名空间名称
+  (编译源文件“HYFbtclocker.cpp”)
+  
+C:\Users\胡剑卓\Desktop\mypanel-master\HYFbtclocker\crypt.h(294,10): error C2923: "std::queue": "path" 不是参数 "_Ty" 的有效 模板 类型参数
+  (编译源文件“HYFbtclocker.cpp”)
+      C:\Users\胡剑卓\Desktop\mypanel-master\HYFbtclocker\rsa.h(36,5):
+      参见“path”的声明
+  
+C:\Users\胡剑卓\Desktop\mypanel-master\HYFbtclocker\crypt.h(294,10): error C2976: “std::queue'”: 模板 参数太少
+  (编译源文件“HYFbtclocker.cpp”)
+      C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.42.34433\include\queue(34,7):
+      参见“std::queue”的声明
+  
+C:\Users\胡剑卓\Desktop\mypanel-master\HYFbtclocker\crypt.h(149,24): error C2512: “std::queue”: 没有合适的默认构造函数可用
+  (编译源文件“HYFbtclocker.cpp”)
+      C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.42.34433\include\queue(34,7):
+      参见“std::queue”的声明
+  
+C:\Users\胡剑卓\Desktop\mypanel-master\HYFbtclocker\crypt.h(171,33): error C2663: “std::vector<_Ty,_Alloc>::_Unchecked_begin”: 没有重载函数具有对 “this” 指针的有效转换
+  (编译源文件“HYFbtclocker.cpp”)
+      C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.42.34433\include\vector(1854,40):
+      可能是“const _Ty *std::vector<_Ty,_Alloc>::_Unchecked_begin(void) noexcept const”
+          C:\Users\胡剑卓\Desktop\mypanel-master\HYFbtclocker\crypt.h(171,33):
+          “const _Ty *std::vector<_Ty,_Alloc>::_Unchecked_begin(void) noexcept const”: 不能将“this”指针从“const std::vector”转换为“const std::vector<_Ty,_Alloc> &”
+              C:\Users\胡剑卓\Desktop\mypanel-master\HYFbtclocker\crypt.h(171,33):
+              原因如下: 无法从“const std::vector”转换为“const std::vector<_Ty,_Alloc>”
+              C:\Users\胡剑卓\Desktop\mypanel-master\HYFbtclocker\crypt.h(171,33):
+              转换要求第二个用户定义的转换运算符或构造函数
+      C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.42.34433\include\vector(1850,34):
+      或    “_Ty *std::vector<_Ty,_Alloc>::_Unchecked_begin(void) noexcept”
+          C:\Users\胡剑卓\Desktop\mypanel-master\HYFbtclocker\crypt.h(171,33):
+          “_Ty *std::vector<_Ty,_Alloc>::_Unchecked_begin(void) noexcept”: 不能将“this”指针从“const std::vector”转换为“std::vector<_Ty,_Alloc> &”
+              C:\Users\胡剑卓\Desktop\mypanel-master\HYFbtclocker\crypt.h(171,33):
+              原因如下: 无法从“const std::vector”转换为“std::vector<_Ty,_Alloc>”
+              C:\Users\胡剑卓\Desktop\mypanel-master\HYFbtclocker\crypt.h(171,33):
+              转换要求第二个用户定义的转换运算符或构造函数
+      C:\Users\胡剑卓\Desktop\mypanel-master\HYFbtclocker\crypt.h(171,33):
+      尝试匹配参数列表“()”时
+  
+C:\Users\胡剑卓\Desktop\mypanel-master\HYFbtclocker\crypt.h(171,33): error C2663: “std::vector<_Ty,_Alloc>::_Unchecked_end”: 没有重载函数具有对 “this” 指针的有效转换
+  (编译源文件“HYFbtclocker.cpp”)
+      C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.42.34433\include\vector(1862,40):
+      可能是“const _Ty *std::vector<_Ty,_Alloc>::_Unchecked_end(void) noexcept const”
+          C:\Users\胡剑卓\Desktop\mypanel-master\HYFbtclocker\crypt.h(171,33):
+          “const _Ty *std::vector<_Ty,_Alloc>::_Unchecked_end(void) noexcept const”: 不能将“this”指针从“const std::vector”转换为“const std::vector<_Ty,_Alloc> &”
+              C:\Users\胡剑卓\Desktop\mypanel-master\HYFbtclocker\crypt.h(171,33):
+              原因如下: 无法从“const std::vector”转换为“const std::vector<_Ty,_Alloc>”
+              C:\Users\胡剑卓\Desktop\mypanel-master\HYFbtclocker\crypt.h(171,33):
+              转换要求第二个用户定义的转换运算符或构造函数
+      C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.42.34433\include\vector(1858,34):
+      或    “_Ty *std::vector<_Ty,_Alloc>::_Unchecked_end(void) noexcept”
+          C:\Users\胡剑卓\Desktop\mypanel-master\HYFbtclocker\crypt.h(171,33):
+          “_Ty *std::vector<_Ty,_Alloc>::_Unchecked_end(void) noexcept”: 不能将“this”指针从“const std::vector”转换为“std::vector<_Ty,_Alloc> &”
+              C:\Users\胡剑卓\Desktop\mypanel-master\HYFbtclocker\crypt.h(171,33):
+              原因如下: 无法从“const std::vector”转换为“std::vector<_Ty,_Alloc>”
+              C:\Users\胡剑卓\Desktop\mypanel-master\HYFbtclocker\crypt.h(171,33):
+              转换要求第二个用户定义的转换运算符或构造函数
+      C:\Users\胡剑卓\Desktop\mypanel-master\HYFbtclocker\crypt.h(171,33):
+      尝试匹配参数列表“()”时
+  
+C:\Users\胡剑卓\Desktop\mypanel-master\HYFbtclocker\crypt.h(172,34): error C2672: “std::_Hash<std::_Uset_traits<_Kty,std::_Uhash_compare<_Kty,_Hasher,_Keyeq>,_Alloc,false>>::find”: 未找到匹配的重载函数
+C:\Users\胡剑卓\Desktop\mypanel-master\HYFbtclocker\crypt.h(172,34): error C2672:         with
+C:\Users\胡剑卓\Desktop\mypanel-master\HYFbtclocker\crypt.h(172,34): error C2672:         [
+C:\Users\胡剑卓\Desktop\mypanel-master\HYFbtclocker\crypt.h(172,34): error C2672:             _Kty=std::string,
+C:\Users\胡剑卓\Desktop\mypanel-master\HYFbtclocker\crypt.h(172,34): error C2672:             _Hasher=std::hash<std::string>,
+C:\Users\胡剑卓\Desktop\mypanel-master\HYFbtclocker\crypt.h(172,34): error C2672:             _Keyeq=std::equal_to<std::string>,
+C:\Users\胡剑卓\Desktop\mypanel-master\HYFbtclocker\crypt.h(172,34): error C2672:             _Alloc=std::allocator<std::string>
+C:\Users\胡剑卓\Desktop\mypanel-master\HYFbtclocker\crypt.h(172,34): error C2672:         ]
+  (编译源文件“HYFbtclocker.cpp”)
+      C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.42.34433\include\xhash(1234,31):
+      可能是“std::_List_const_iterator<std::_List_val<std::_List_simple_types<_Ty>>> std::_Hash<std::_Uset_traits<_Kty,std::_Uhash_compare<_Kty,_Hasher,_Keyeq>,_Alloc,false>>::find(const _Kty &) const”
+          with
+          [
+              _Ty=std::basic_string<char,std::char_traits<char>,std::allocator<char>>,
+              _Kty=std::string,
+              _Hasher=std::hash<std::string>,
+              _Keyeq=std::equal_to<std::string>,
+              _Alloc=std::allocator<std::string>
+          ]
+      C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.42.34433\include\xhash(1229,25):
+      或    “std::_List_const_iterator<std::_List_val<std::_List_simple_types<_Ty>>> std::_Hash<std::_Uset_traits<_Kty,std::_Uhash_compare<_Kty,_Hasher,_Keyeq>,_Alloc,false>>::find(const _Kty &)”
+          with
+          [
+              _Ty=std::basic_string<char,std::char_traits<char>,std::allocator<char>>,
+              _Kty=std::string,
+              _Hasher=std::hash<std::string>,
+              _Keyeq=std::equal_to<std::string>,
+              _Alloc=std::allocator<std::string>
+          ]
+  
+C:\Users\胡剑卓\Desktop\mypanel-master\HYFbtclocker\crypt.h(176,28): error C2663: “std::queue<_Ty,_Container>::push”: 没有重载函数具有对 “this” 指针的有效转换
+  (编译源文件“HYFbtclocker.cpp”)
+      C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.42.34433\include\queue(122,10):
+      可能是“void std::queue<_Ty,_Container>::push(_Container::value_type &&)”
+          C:\Users\胡剑卓\Desktop\mypanel-master\HYFbtclocker\crypt.h(176,28):
+          “void std::queue<_Ty,_Container>::push(_Container::value_type &&)”: 不能将“this”指针从“std::queue”转换为“std::queue<_Ty,_Container> &”
+              C:\Users\胡剑卓\Desktop\mypanel-master\HYFbtclocker\crypt.h(176,21):
+              原因如下: 无法从“std::queue”转换为“std::queue<_Ty,_Container>”
+              C:\Users\胡剑卓\Desktop\mypanel-master\HYFbtclocker\crypt.h(176,21):
+              转换要求第二个用户定义的转换运算符或构造函数
+      C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.42.34433\include\queue(118,10):
+      或    “void std::queue<_Ty,_Container>::push(const _Container::value_type &)”
+          C:\Users\胡剑卓\Desktop\mypanel-master\HYFbtclocker\crypt.h(176,28):
+          “void std::queue<_Ty,_Container>::push(const _Container::value_type &)”: 不能将“this”指针从“std::queue”转换为“std::queue<_Ty,_Container> &”
+              C:\Users\胡剑卓\Desktop\mypanel-master\HYFbtclocker\crypt.h(176,21):
+              原因如下: 无法从“std::queue”转换为“std::queue<_Ty,_Container>”
+              C:\Users\胡剑卓\Desktop\mypanel-master\HYFbtclocker\crypt.h(176,21):
+              转换要求第二个用户定义的转换运算符或构造函数
+      C:\Users\胡剑卓\Desktop\mypanel-master\HYFbtclocker\crypt.h(176,28):
+      尝试匹配参数列表“(const _Ty)”时
+  
+C:\Users\胡剑卓\Desktop\mypanel-master\HYFbtclocker\crypt.h(194,27): error C2662: “bool std::queue<_Ty,_Container>::empty(void) noexcept(<expr>) const”: 不能将“this”指针从“std::queue”转换为“const std::queue<_Ty,_Container> &”
+  (编译源文件“HYFbtclocker.cpp”)
+      C:\Users\胡剑卓\Desktop\mypanel-master\HYFbtclocker\crypt.h(194,20):
+      原因如下: 无法从“std::queue”转换为“const std::queue<_Ty,_Container>”
+      C:\Users\胡剑卓\Desktop\mypanel-master\HYFbtclocker\crypt.h(194,20):
+      转换要求第二个用户定义的转换运算符或构造函数
+      C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.42.34433\include\queue(94,43):
+      参见“std::queue<_Ty,_Container>::empty”的声明
+      C:\Users\胡剑卓\Desktop\mypanel-master\HYFbtclocker\crypt.h(194,27):
+      尝试匹配参数列表“()”时
+  
+C:\Users\胡剑卓\Desktop\mypanel-master\HYFbtclocker\crypt.h(207,25): error C2039: "clamp": 不是 "std" 的成员
+  (编译源文件“HYFbtclocker.cpp”)
+      C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.42.34433\include\iomanip(22,1):
+      参见“std”的声明
+  
+C:\Users\胡剑卓\Desktop\mypanel-master\HYFbtclocker\crypt.h(207,25): error C3861: “clamp”: 找不到标识符
+  (编译源文件“HYFbtclocker.cpp”)
+  
+C:\Users\胡剑卓\Desktop\mypanel-master\HYFbtclocker\crypt.h(216,21): error C2039: "clamp": 不是 "std" 的成员
+  (编译源文件“HYFbtclocker.cpp”)
+      C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.42.34433\include\iomanip(22,1):
+      参见“std”的声明
+  
+C:\Users\胡剑卓\Desktop\mypanel-master\HYFbtclocker\crypt.h(216,21): error C3861: “clamp”: 找不到标识符
+  (编译源文件“HYFbtclocker.cpp”)
+  
+C:\Users\胡剑卓\Desktop\mypanel-master\HYFbtclocker\crypt.h(221,13): error C2653: “fs”: 不是类或命名空间名称
+  (编译源文件“HYFbtclocker.cpp”)
+  
+C:\Users\胡剑卓\Desktop\mypanel-master\HYFbtclocker\crypt.h(221,22): error C2146: 语法错误: 缺少“;”(在标识符“file”的前面)
+  (编译源文件“HYFbtclocker.cpp”)
+  
+C:\Users\胡剑卓\Desktop\mypanel-master\HYFbtclocker\crypt.h(221,22): error C2065: “file”: 未声明的标识符
+  (编译源文件“HYFbtclocker.cpp”)
+  
+C:\Users\胡剑卓\Desktop\mypanel-master\HYFbtclocker\crypt.h(225,45): error C2662: “bool std::queue<_Ty,_Container>::empty(void) noexcept(<expr>) const”: 不能将“this”指针从“std::queue”转换为“const std::queue<_Ty,_Container> &”
+  (编译源文件“HYFbtclocker.cpp”)
+      C:\Users\胡剑卓\Desktop\mypanel-master\HYFbtclocker\crypt.h(225,38):
+      原因如下: 无法从“std::queue”转换为“const std::queue<_Ty,_Container>”
+      C:\Users\胡剑卓\Desktop\mypanel-master\HYFbtclocker\crypt.h(225,38):
+      转换要求第二个用户定义的转换运算符或构造函数
+      C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.42.34433\include\queue(94,43):
+      参见“std::queue<_Ty,_Container>::empty”的声明
+      C:\Users\胡剑卓\Desktop\mypanel-master\HYFbtclocker\crypt.h(225,45):
+      尝试匹配参数列表“()”时
+  
+C:\Users\胡剑卓\Desktop\mypanel-master\HYFbtclocker\crypt.h(228,37): error C2662: “bool std::queue<_Ty,_Container>::empty(void) noexcept(<expr>) const”: 不能将“this”指针从“std::queue”转换为“const std::queue<_Ty,_Container> &”
+  (编译源文件“HYFbtclocker.cpp”)
+      C:\Users\胡剑卓\Desktop\mypanel-master\HYFbtclocker\crypt.h(228,30):
+      原因如下: 无法从“std::queue”转换为“const std::queue<_Ty,_Container>”
+      C:\Users\胡剑卓\Desktop\mypanel-master\HYFbtclocker\crypt.h(228,30):
+      转换要求第二个用户定义的转换运算符或构造函数
+      C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.42.34433\include\queue(94,43):
+      参见“std::queue<_Ty,_Container>::empty”的声明
+      C:\Users\胡剑卓\Desktop\mypanel-master\HYFbtclocker\crypt.h(228,37):
+      尝试匹配参数列表“()”时
+  
+C:\Users\胡剑卓\Desktop\mypanel-master\HYFbtclocker\crypt.h(228,27): error C2088: 内置运算符“&&”无法应用于类型为“std::atomic<bool>”的操作数
+  (编译源文件“HYFbtclocker.cpp”)
+  
+C:\Users\胡剑卓\Desktop\mypanel-master\HYFbtclocker\crypt.h(229,28): error C2662: “bool std::queue<_Ty,_Container>::empty(void) noexcept(<expr>) const”: 不能将“this”指针从“std::queue”转换为“const std::queue<_Ty,_Container> &”
+  (编译源文件“HYFbtclocker.cpp”)
+      C:\Users\胡剑卓\Desktop\mypanel-master\HYFbtclocker\crypt.h(229,21):
+      原因如下: 无法从“std::queue”转换为“const std::queue<_Ty,_Container>”
+      C:\Users\胡剑卓\Desktop\mypanel-master\HYFbtclocker\crypt.h(229,21):
+      转换要求第二个用户定义的转换运算符或构造函数
+      C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.42.34433\include\queue(94,43):
+      参见“std::queue<_Ty,_Container>::empty”的声明
+      C:\Users\胡剑卓\Desktop\mypanel-master\HYFbtclocker\crypt.h(229,28):
+      尝试匹配参数列表“()”时
+  
+C:\Users\胡剑卓\Desktop\mypanel-master\HYFbtclocker\crypt.h(229,55): error C2065: “file”: 未声明的标识符
+  (编译源文件“HYFbtclocker.cpp”)
+  
+C:\Users\胡剑卓\Desktop\mypanel-master\HYFbtclocker\crypt.h(231,21): error C2065: “file”: 未声明的标识符
+  (编译源文件“HYFbtclocker.cpp”)
+  
+C:\Users\胡剑卓\Desktop\mypanel-master\HYFbtclocker\crypt.h(232,21): error C2065: “file”: 未声明的标识符
+  (编译源文件“HYFbtclocker.cpp”)
+  
+C:\Users\胡剑卓\Desktop\mypanel-master\HYFbtclocker\crypt.h(232,45): error C2663: “std::queue<_Ty,_Container>::front”: 没有重载函数具有对 “this” 指针的有效转换
+  (编译源文件“HYFbtclocker.cpp”)
+      C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.42.34433\include\queue(106,32):
+      可能是“_Container::const_reference std::queue<_Ty,_Container>::front(void) noexcept(<expr>) const”
+          C:\Users\胡剑卓\Desktop\mypanel-master\HYFbtclocker\crypt.h(232,45):
+          “_Container::const_reference std::queue<_Ty,_Container>::front(void) noexcept(<expr>) const”: 不能将“this”指针从“std::queue”转换为“const std::queue<_Ty,_Container> &”
+              C:\Users\胡剑卓\Desktop\mypanel-master\HYFbtclocker\crypt.h(232,38):
+              原因如下: 无法从“std::queue”转换为“const std::queue<_Ty,_Container>”
+              C:\Users\胡剑卓\Desktop\mypanel-master\HYFbtclocker\crypt.h(232,38):
+              转换要求第二个用户定义的转换运算符或构造函数
+      C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.42.34433\include\queue(102,26):
+      或    “_Container::reference std::queue<_Ty,_Container>::front(void) noexcept(<expr>)”
+          C:\Users\胡剑卓\Desktop\mypanel-master\HYFbtclocker\crypt.h(232,45):
+          “_Container::reference std::queue<_Ty,_Container>::front(void) noexcept(<expr>)”: 不能将“this”指针从“std::queue”转换为“std::queue<_Ty,_Container> &”
+              C:\Users\胡剑卓\Desktop\mypanel-master\HYFbtclocker\crypt.h(232,38):
+              原因如下: 无法从“std::queue”转换为“std::queue<_Ty,_Container>”
+              C:\Users\胡剑卓\Desktop\mypanel-master\HYFbtclocker\crypt.h(232,38):
+              转换要求第二个用户定义的转换运算符或构造函数
+      C:\Users\胡剑卓\Desktop\mypanel-master\HYFbtclocker\crypt.h(232,45):
+      尝试匹配参数列表“()”时
+  
+C:\Users\胡剑卓\Desktop\mypanel-master\HYFbtclocker\crypt.h(233,28): error C2662: “void std::queue<_Ty,_Container>::pop(void) noexcept(<expr>)”: 不能将“this”指针从“std::queue”转换为“std::queue<_Ty,_Container> &”
+  (编译源文件“HYFbtclocker.cpp”)
+      C:\Users\胡剑卓\Desktop\mypanel-master\HYFbtclocker\crypt.h(233,21):
+      原因如下: 无法从“std::queue”转换为“std::queue<_Ty,_Container>”
+      C:\Users\胡剑卓\Desktop\mypanel-master\HYFbtclocker\crypt.h(233,21):
+      转换要求第二个用户定义的转换运算符或构造函数
+      C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.42.34433\include\queue(146,10):
+      参见“std::queue<_Ty,_Container>::pop”的声明
+      C:\Users\胡剑卓\Desktop\mypanel-master\HYFbtclocker\crypt.h(233,28):
+      尝试匹配参数列表“()”时
+  
+C:\Users\胡剑卓\Desktop\mypanel-master\HYFbtclocker\crypt.h(239,29): error C2065: “file”: 未声明的标识符
+  (编译源文件“HYFbtclocker.cpp”)
+  
+C:\Users\胡剑卓\Desktop\mypanel-master\HYFbtclocker\crypt.h(243,47): error C2065: “file”: 未声明的标识符
+  (编译源文件“HYFbtclocker.cpp”)
+  
+C:\Users\胡剑卓\Desktop\mypanel-master\HYFbtclocker\crypt.h(243,47): error C1003: 错误计数超过 100；正在停止编译
+  (编译源文件“HYFbtclocker.cpp”)
+  

